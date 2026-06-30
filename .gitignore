@@ -1,0 +1,32 @@
+/tmp
+/out-tsc
+/dist
+
+# Nx
+.nx/cache
+.nx/workspace-data
+
+node_modules
+.DS_Store
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+/.pnp
+.pnp.js
+
+.vscode/*
+vite.config.*.timestamp*
+vitest.config.*.timestamp*
+
+# Playwright
+/test-results
+/playwright-report
+/blob-report
+/playwright/.cache
+
+*.secret
+.env
+
+# Prisma SQLite (local dev db)
+apps/api/prisma/*.db
+apps/api/prisma/*.db-journal
