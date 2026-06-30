@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Bytes</string>
+    <string name="title_activity_main">Bytes</string>
+    <string name="package_name">com.bytes.marketplace</string>
+    <string name="custom_url_scheme">com.bytes.marketplace</string>
+</resources>
