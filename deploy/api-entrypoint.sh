@@ -6,7 +6,7 @@ cd /app/apps/api
 
 if [ ! -f /data/prod.db ]; then
   echo "no db yet -> push schema + seed"
-  bunx prisma db push --skip-generate
+  bunx prisma db push
   bunx prisma db seed
 fi
 
