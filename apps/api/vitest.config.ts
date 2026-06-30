@@ -14,6 +14,8 @@ export default defineConfig({
   test: {
     environment: 'node',
     include: ['src/**/*.spec.ts'],
+    // Specs share one SQLite file; parallel files deadlock on write locks.
+    fileParallelism: false,
     env: {
       DATABASE_URL: `file:${dbPath}`,
       // S3 config is read at import time; tests never hit the network, so dummy values suffice.

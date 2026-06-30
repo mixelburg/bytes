@@ -2,6 +2,7 @@ import { S3Client } from 'bun';
 import { type Context, Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { db } from './db';
+import { ensureFts, ftsMatch } from './fts';
 import { type Address, buildTimeline } from './tracking';
 
 const requireEnv = (key: string): string => {
@@ -34,6 +35,28 @@ const SORTS = {
 
 type SortKey = keyof typeof SORTS;
 
+// Raw ORDER BY for the FTS search path. Whitelisted by SortKey — never built
+// from user input — so interpolating it into SQL is safe.
+const FTS_SORTS: Record<SortKey, string> = {
+  'price-asc': 'p.priceMin ASC',
+  'price-desc': 'p.priceMin DESC',
+  'rating-desc': 'p.rating DESC',
+  newest: 'p.createdAt DESC',
+};
+
+// SQLite INTEGER columns can come back as bigint from raw queries; the JSON
+// shape is the same as the Prisma list select.
+type FtsRow = {
+  id: number | bigint;
+  title: string;
+  category: string;
+  image: string;
+  rating: number;
+  priceMin: number;
+  priceMax: number;
+  totalStock: number | bigint;
+};
+
 const clamp = (n: number, min: number, max: number) =>
   Number.isFinite(n) ? Math.min(Math.max(n, min), max) : min;
 
@@ -64,8 +87,46 @@ const app = new Hono()
     const sortKey = (c.req.query('sort') ?? 'newest') as SortKey;
     const orderBy = SORTS[sortKey] ?? SORTS.newest;
 
+    // Search uses the FTS5 index (scales to ~100k rows; multi-word, prefix,
+    // across title/description/category). Empty or all-punctuation queries
+    // fall through to the plain indexed browse below.
+    const match = search ? ftsMatch(search) : '';
+    if (match) {
+      const orderBySql = FTS_SORTS[sortKey] ?? FTS_SORTS.newest;
+      const catFilter = category ? 'AND p.category = ?' : '';
+      const filterParams = category ? [match, category] : [match];
+
+      const [rows, countRows] = await Promise.all([
+        db.$queryRawUnsafe<FtsRow[]>(
+          `SELECT p.id, p.title, p.category, p.image, p.rating,
+                  p.priceMin, p.priceMax, p.totalStock
+             FROM product_fts f JOIN Product p ON p.id = f.rowid
+            WHERE product_fts MATCH ? ${catFilter}
+            ORDER BY ${orderBySql}
+            LIMIT ? OFFSET ?`,
+          ...filterParams,
+          limit,
+          (page - 1) * limit,
+        ),
+        db.$queryRawUnsafe<[{ n: number | bigint }]>(
+          `SELECT count(*) AS n
+             FROM product_fts f JOIN Product p ON p.id = f.rowid
+            WHERE product_fts MATCH ? ${catFilter}`,
+          ...filterParams,
+        ),
+      ]);
+
+      const total = Number(countRows[0]?.n ?? 0);
+      const items = rows.map(({ totalStock, ...p }) => ({
+        ...p,
+        id: Number(p.id),
+        image: imageUrl(p.image),
+        inStock: Number(totalStock) > 0,
+      }));
+      return c.json({ items, total, page, limit, hasMore: page * limit < total });
+    }
+
     const where = {
-      ...(search ? { title: { contains: search } } : {}),
       ...(category ? { category } : {}),
     };
 
@@ -338,5 +399,9 @@ const app = new Hono()
   });
 
 export type AppType = typeof app;
+
+// Build/refresh the FTS5 search index before serving. Idempotent and cheap on
+// warm boots; required because db push can't create it and prod is pre-seeded.
+await ensureFts(db);
 
 export default { port: Number(process.env.PORT ?? 3001), fetch: app.fetch };
