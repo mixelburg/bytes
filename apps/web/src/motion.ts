@@ -7,6 +7,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 
 const prefersReduced = () =>
   typeof window !== 'undefined' &&
+  typeof window.matchMedia === 'function' &&
   window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 /** Capped stagger delay for list entrances — ~40ms step, capped so long lists
@@ -42,10 +43,12 @@ export function useTween(value: number, ms = 250): number {
   return display;
 }
 
-/** Fly a clone of `source` to the cart icon (the element tagged
- *  `data-cart-target`). No-op under reduced-motion or if the target is gone. */
+/** Fly a clone of `source` straight to the cart icon (the visible element
+ *  tagged `data-cart-target` — top bar on desktop, bottom nav on mobile).
+ *  No-op under reduced-motion or if the target is gone. */
 export function flyToCart(source: HTMLElement) {
-  const target = document.querySelector<HTMLElement>('[data-cart-target]');
+  const targets = document.querySelectorAll<HTMLElement>('[data-cart-target]');
+  const target = Array.from(targets).find((t) => t.offsetParent !== null);
   if (!target || prefersReduced()) return;
   const s = source.getBoundingClientRect();
   const t = target.getBoundingClientRect();
@@ -60,8 +63,7 @@ export function flyToCart(source: HTMLElement) {
     pointerEvents: 'none',
     zIndex: '9999',
     transformOrigin: 'top left',
-    transition:
-      'transform .55s cubic-bezier(.5,-0.15,.4,1), opacity .55s ease-in',
+    transition: 'transform .5s cubic-bezier(.4,0,.2,1), opacity .5s ease-in',
   });
   document.body.appendChild(ghost);
   const dx = t.left + t.width / 2 - (s.left + s.width / 2);
@@ -71,6 +73,59 @@ export function flyToCart(source: HTMLElement) {
     ghost.style.opacity = '0.25';
   });
   ghost.addEventListener('transitionend', () => ghost.remove(), { once: true });
+}
+
+/** Pull-to-refresh for the top of the page. Tracks a downward drag that starts
+ *  at scroll-top and runs `onRefresh` once it passes the threshold. Returns the
+ *  live pull distance (px) and a refreshing flag for the affordance. Touch-only,
+ *  so desktop simply never triggers it — the manual refetch path still works. */
+export function usePullToRefresh(onRefresh: () => Promise<unknown> | unknown) {
+  const [pull, setPull] = useState(0);
+  const [refreshing, setRefreshing] = useState(false);
+  const cb = useRef(onRefresh);
+  cb.current = onRefresh;
+  useEffect(() => {
+    const THRESHOLD = 70;
+    const startY = { v: null as number | null };
+    const pulled = { v: 0 };
+    const busy = { v: false };
+    const set = (v: number) => {
+      pulled.v = v;
+      setPull(v);
+    };
+    const start = (e: TouchEvent) => {
+      startY.v = window.scrollY <= 0 && !busy.v ? e.touches[0].clientY : null;
+    };
+    const move = (e: TouchEvent) => {
+      if (startY.v == null) return;
+      const dy = e.touches[0].clientY - startY.v;
+      if (dy > 0) set(Math.min(dy, THRESHOLD * 1.5));
+    };
+    const end = async () => {
+      if (startY.v == null) return;
+      startY.v = null;
+      if (pulled.v < THRESHOLD) return set(0);
+      busy.v = true;
+      setRefreshing(true);
+      set(THRESHOLD);
+      try {
+        await cb.current();
+      } finally {
+        busy.v = false;
+        setRefreshing(false);
+        set(0);
+      }
+    };
+    window.addEventListener('touchstart', start, { passive: true });
+    window.addEventListener('touchmove', move, { passive: true });
+    window.addEventListener('touchend', end);
+    return () => {
+      window.removeEventListener('touchstart', start);
+      window.removeEventListener('touchmove', move);
+      window.removeEventListener('touchend', end);
+    };
+  }, []);
+  return { pull, refreshing };
 }
 
 /** FLIP grid reflow: returns a ref for the grid container. When its keyed

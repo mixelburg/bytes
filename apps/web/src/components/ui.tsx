@@ -84,11 +84,12 @@ export const SquareButton = styled('button')(({ theme }) => ({
   display: 'grid',
   placeItems: 'center',
   lineHeight: 1,
-  transition: 'background .15s, color .15s',
+  transition: 'background .15s, color .15s, transform .08s',
   '&:hover:not(:disabled)': {
     background: theme.vars!.palette.primary.main,
     color: theme.vars!.palette.primary.contrastText,
   },
+  '&:active:not(:disabled)': { transform: 'scale(.92)' },
   '&:disabled': { opacity: 0.4, cursor: 'default' },
 }));
 
@@ -146,16 +147,20 @@ export function QtyStepper({
           display: 'grid',
           placeItems: 'center',
           fontSize: 18,
+          transition: 'transform .08s',
+          '&:active': { transform: 'scale(.8)' },
         }}
       >
         −
       </Box>
       <Box
+        key={qty}
         sx={{
           minWidth: 28,
           textAlign: 'center',
           fontWeight: 600,
           fontSize: 14,
+          animation: 'mpop .2s ease both',
         }}
       >
         {qty}
@@ -172,6 +177,8 @@ export function QtyStepper({
           placeItems: 'center',
           fontSize: 18,
           color: canInc ? 'text.primary' : 'text.disabled',
+          transition: 'transform .08s',
+          '&:active': canInc ? { transform: 'scale(.8)' } : undefined,
         }}
       >
         +

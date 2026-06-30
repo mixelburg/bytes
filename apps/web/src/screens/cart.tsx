@@ -1,4 +1,4 @@
-import Box from '@mui/material/Box';
+  import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
 import { useNavigate } from 'react-router-dom';
@@ -7,9 +7,11 @@ import {
   Mono,
   ProductImage,
   QtyStepper,
+  Rolling,
   SectionLabel,
 } from '../components/ui';
 import { money } from '../data/format';
+import { staggerDelay } from '../motion';
 import {
   removeItem,
   selectCartCount,
@@ -77,15 +79,17 @@ export default function CartScreen() {
           </Box>
         </Typography>
 
-        {lines.map((l) => (
+        {lines.map((l, i) => (
           <Box
             key={l.variantId}
+            style={{ animationDelay: staggerDelay(i) }}
             sx={{
               display: 'flex',
               gap: 1.75,
               py: 2,
               borderBottom: '1px solid',
               borderColor: 'divider',
+              animation: 'mslide .25s ease both',
             }}
           >
             <Box
@@ -204,7 +208,7 @@ export default function CartScreen() {
         >
           <span>Total</span>
           <Box component="span" sx={{ fontFamily: mono }}>
-            {money(total)}
+            <Rolling value={total} format={(n) => money(Math.round(n))} />
           </Box>
         </Box>
         <Button
@@ -213,7 +217,8 @@ export default function CartScreen() {
           sx={{ mt: 2, height: 52, fontSize: 14 }}
           onClick={() => navigate('/checkout')}
         >
-          Checkout — {money(total)}
+          Checkout —{' '}
+          <Rolling value={total} format={(n) => money(Math.round(n))} />
         </Button>
         {subtotal > 0 && subtotal < 75 && (
           <Mono

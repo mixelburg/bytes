@@ -3,19 +3,23 @@ import Typography from '@mui/material/Typography';
 import { useNavigate } from 'react-router-dom';
 import { priceLabel } from '../data/format';
 import type { ListItem } from '../data/queries';
+import { tapHaptic } from '../haptics';
+import { flyToCart, staggerDelay } from '../motion';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { toggleSaved } from '../store/saved-slice';
 import { mono } from '../theme';
 import { Mono, ProductImage, SquareButton } from './ui';
 
 /** Catalog grid card — image, save toggle, quick-add, title, price, rating.
- *  Shared by the list and saved screens. */
+ *  Shared by the list and saved screens. `index` drives the entrance stagger. */
 export default function ProductCard({
   p,
   onAdd,
+  index = 0,
 }: {
   p: ListItem;
   onAdd?: (p: ListItem) => void;
+  index?: number;
 }) {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
@@ -23,7 +27,9 @@ export default function ProductCard({
   const soldOut = !p.inStock;
   return (
     <Box
+      data-flip-id={p.id}
       onClick={() => navigate(`/p/${p.id}`)}
+      style={{ animationDelay: staggerDelay(index) }}
       sx={{ cursor: 'pointer', animation: 'mslide .25s ease both' }}
     >
       <Box sx={{ position: 'relative', aspectRatio: '1' }}>
@@ -61,6 +67,7 @@ export default function ProductCard({
               fontSize: 11,
               fontWeight: 600,
               letterSpacing: '0.05em',
+              animation: 'mfade .25s ease both',
             }}
           >
             SOLD OUT
@@ -79,6 +86,10 @@ export default function ProductCard({
               }}
               onClick={(e) => {
                 e.stopPropagation();
+                // fly the image tile (the button's parent) toward the cart
+                if (e.currentTarget.parentElement)
+                  flyToCart(e.currentTarget.parentElement);
+                tapHaptic();
                 onAdd(p);
               }}
             >

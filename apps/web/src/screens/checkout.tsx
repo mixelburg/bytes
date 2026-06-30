@@ -5,7 +5,7 @@ import Typography from '@mui/material/Typography';
 import { useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Mono, SectionLabel } from '../components/ui';
+import { Mono, Rolling, SectionLabel } from '../components/ui';
 import { money } from '../data/format';
 import {
   selectCartCount,
@@ -86,7 +86,13 @@ export default function CheckoutScreen() {
 
   return (
     <Box
-      sx={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}
+      sx={{
+        display: 'flex',
+        flexDirection: 'column',
+        flex: 1,
+        minHeight: 0,
+        animation: 'mslide .25s ease both',
+      }}
     >
       <Box sx={{ px: 2.5, pt: 1.5 }}>
         <Typography variant="h4" component="h1" sx={{ fontSize: 24 }}>
@@ -172,7 +178,7 @@ export default function CheckoutScreen() {
         >
           <span>Total</span>
           <Box component="span" sx={{ fontFamily: mono }}>
-            {money(total)}
+            <Rolling value={total} format={(n) => money(Math.round(n))} />
           </Box>
         </Box>
 

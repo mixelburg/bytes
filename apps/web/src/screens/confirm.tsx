@@ -48,10 +48,30 @@ export default function ConfirmScreen() {
           borderRadius: '50%',
           display: 'grid',
           placeItems: 'center',
-          fontSize: 34,
         }}
       >
-        ✓
+        <Box
+          component="svg"
+          viewBox="0 0 52 52"
+          aria-hidden
+          sx={{ width: 40, height: 40, color: 'primary.main' }}
+        >
+          <Box
+            component="path"
+            pathLength={1}
+            d="M14 27 l8 8 l16 -18"
+            sx={{
+              fill: 'none',
+              stroke: 'currentColor',
+              strokeWidth: 4,
+              strokeLinecap: 'square',
+              strokeLinejoin: 'miter',
+              strokeDasharray: 1,
+              strokeDashoffset: 0,
+              animation: 'mcheck .5s ease .15s both',
+            }}
+          />
+        </Box>
       </Box>
       <Typography
         component="h1"

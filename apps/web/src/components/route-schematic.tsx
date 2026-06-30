@@ -45,6 +45,8 @@ export function RouteSchematic({ stops }: { stops: Stop[] }) {
           width: 0,
           borderLeft: `1.5px solid ${ink}`,
           transition: 'height .5s ease',
+          transformOrigin: 'top',
+          animation: 'mdraw .6s ease both',
         }}
       />
 

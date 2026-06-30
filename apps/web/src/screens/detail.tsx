@@ -2,12 +2,19 @@ import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Skeleton from '@mui/material/Skeleton';
 import Typography from '@mui/material/Typography';
-import { useSnackbar } from 'notistack';
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { CenterState, Mono, ProductImage, QtyStepper } from '../components/ui';
+import {
+  CenterState,
+  Mono,
+  ProductImage,
+  QtyStepper,
+  Rolling,
+} from '../components/ui';
 import { money, stockColor } from '../data/format';
 import { NotFoundError, useProduct, type Variant } from '../data/queries';
+import { tapHaptic } from '../haptics';
+import { flyToCart } from '../motion';
 import { addItem } from '../store/cart-slice';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { toggleSaved } from '../store/saved-slice';
@@ -48,11 +55,11 @@ export default function DetailScreen() {
   const { id } = useParams();
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
-  const { enqueueSnackbar } = useSnackbar();
   const { data: p, isLoading, error } = useProduct(id);
   const saved = useAppSelector((s) => (p ? s.saved.ids.includes(p.id) : false));
   const [variantId, setVariantId] = useState<number | null>(null);
   const [qty, setQty] = useState(1);
+  const imgRef = useRef<HTMLDivElement>(null);
 
   // Default to the first in-stock variant (or the first variant).
   const selected = useMemo<Variant | undefined>(() => {
@@ -110,6 +117,8 @@ export default function DetailScreen() {
   };
 
   const onAdd = () => {
+    if (imgRef.current) flyToCart(imgRef.current);
+    tapHaptic();
     dispatch(
       addItem({
         variantId: selected.id,
@@ -122,25 +131,6 @@ export default function DetailScreen() {
         qty,
       }),
     );
-    enqueueSnackbar(`${qty}× ${p.title} added`, {
-      variant: 'success',
-      action: () => (
-        <Box
-          role="button"
-          onClick={() => navigate('/cart')}
-          sx={{
-            cursor: 'pointer',
-            fontFamily: mono,
-            fontSize: 10,
-            letterSpacing: '0.05em',
-            color: '#d6f549',
-            pr: 1,
-          }}
-        >
-          VIEW
-        </Box>
-      ),
-    });
   };
 
   const actions = soldOut ? (
@@ -173,13 +163,20 @@ export default function DetailScreen() {
         onClick={onAdd}
         sx={{ flex: 1, height: 52, fontSize: 14 }}
       >
-        Add · {money(total)}
+        Add · <Rolling value={total} format={(n) => money(Math.round(n))} />
       </Button>
     </>
   );
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
+    <Box
+      sx={{
+        display: 'flex',
+        flexDirection: 'column',
+        flex: 1,
+        animation: 'mslide .25s ease both',
+      }}
+    >
       <Box sx={{ flex: 1 }}>
         <Box sx={{ display: { xs: 'none', sm: 'block' }, px: 5, pt: 3 }}>
           <Mono
@@ -203,6 +200,7 @@ export default function DetailScreen() {
         >
           {/* image */}
           <Box
+            ref={imgRef}
             sx={{
               position: 'relative',
               width: { xs: '100%', sm: 440 },

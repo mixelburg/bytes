@@ -105,21 +105,35 @@ export default function Layout() {
             <Box
               role="button"
               aria-label="Cart"
+              data-cart-target
               onClick={() => navigate('/cart')}
               sx={{
                 cursor: 'pointer',
+                display: { xs: 'none', sm: 'flex' },
                 border: '1.5px solid',
                 borderColor: 'primary.main',
                 height: 38,
                 px: 1.75,
-                display: 'flex',
                 alignItems: 'center',
                 fontFamily: mono,
                 fontSize: 12,
                 fontWeight: 600,
               }}
             >
-              CART{count > 0 ? ` (${count})` : ''}
+              CART
+              {count > 0 && (
+                <Box
+                  component="span"
+                  key={count}
+                  sx={{
+                    ml: 0.5,
+                    display: 'inline-block',
+                    animation: 'mpop .3s ease both',
+                  }}
+                >
+                  ({count})
+                </Box>
+              )}
             </Box>
           </Box>
         </Box>
@@ -164,12 +178,14 @@ export default function Layout() {
                 label: `CART${count > 0 ? ` (${count})` : ''}`,
                 active: onCart,
                 go: () => navigate('/cart'),
+                cart: true,
               },
               { label: 'ME', active: onOrders, go: () => navigate('/orders') },
             ].map((n) => (
               <Box
                 key={n.label}
                 role="button"
+                data-cart-target={n.cart ? '' : undefined}
                 onClick={n.go}
                 sx={{
                   cursor: 'pointer',

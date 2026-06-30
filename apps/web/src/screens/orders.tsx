@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { CenterState, Mono } from '../components/ui';
 import { money } from '../data/format';
 import { type OrderSummary, useOrders } from '../data/queries';
+import { staggerDelay } from '../motion';
 import { mono } from '../theme';
 
 const date = (iso: string) =>
@@ -15,11 +16,20 @@ const date = (iso: string) =>
     year: 'numeric',
   });
 
-function OrderRow({ o, onOpen }: { o: OrderSummary; onOpen: () => void }) {
+function OrderRow({
+  o,
+  onOpen,
+  index = 0,
+}: {
+  o: OrderSummary;
+  onOpen: () => void;
+  index?: number;
+}) {
   return (
     <Box
       role="button"
       onClick={onOpen}
+      style={{ animationDelay: staggerDelay(index) }}
       sx={{
         display: 'flex',
         justifyContent: 'space-between',
@@ -28,6 +38,7 @@ function OrderRow({ o, onOpen }: { o: OrderSummary; onOpen: () => void }) {
         borderBottom: '1px solid',
         borderColor: 'divider',
         cursor: 'pointer',
+        animation: 'mslide .25s ease both',
         '&:last-of-type': { borderBottom: 'none' },
       }}
     >
@@ -111,9 +122,16 @@ export default function OrdersScreen() {
         </Mono>
       </Box>
 
-      <Box sx={{ mt: 1.75, border: '1.5px solid', borderColor: 'primary.main' }}>
-        {data.map((o) => (
-          <OrderRow key={o.id} o={o} onOpen={() => navigate(`/track/${o.id}`)} />
+      <Box
+        sx={{ mt: 1.75, border: '1.5px solid', borderColor: 'primary.main' }}
+      >
+        {data.map((o, i) => (
+          <OrderRow
+            key={o.id}
+            o={o}
+            index={i}
+            onOpen={() => navigate(`/track/${o.id}`)}
+          />
         ))}
       </Box>
     </Box>

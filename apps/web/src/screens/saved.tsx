@@ -119,15 +119,22 @@ export default function SavedScreen() {
       {isLoading ? (
         <Grid>
           {ids.map((id) => (
-            <Box key={id} sx={{ position: 'relative', aspectRatio: '1' }}>
+            <Box
+              key={id}
+              sx={{
+                position: 'relative',
+                aspectRatio: '1',
+                animation: 'mpulse 1.5s ease-in-out infinite',
+              }}
+            >
               <ProductImage alt="" />
             </Box>
           ))}
         </Grid>
       ) : (
         <Grid>
-          {products.map((p) => (
-            <ProductCard key={p.id} p={p} />
+          {products.map((p, i) => (
+            <ProductCard key={p.id} p={p} index={i} />
           ))}
         </Grid>
       )}

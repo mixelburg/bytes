@@ -4,6 +4,7 @@ import InputBase from '@mui/material/InputBase';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import Typography from '@mui/material/Typography';
+import { useWindowVirtualizer } from '@tanstack/react-virtual';
 import { useSnackbar } from 'notistack';
 import { useEffect, useState } from 'react';
 import { api } from '../api/client';
@@ -16,6 +17,7 @@ import {
   useCatalog,
   useCategories,
 } from '../data/queries';
+import { usePullToRefresh } from '../motion';
 import { addItem } from '../store/cart-slice';
 import { useAppDispatch } from '../store/hooks';
 import { mono } from '../theme';
@@ -53,6 +55,55 @@ export default function ListScreen() {
   const total = data?.pages[0]?.total ?? 0;
   const tabs = ['All', ...(categories ?? [])];
 
+  const { pull, refreshing } = usePullToRefresh(() => refetch());
+
+  // Windowed grid: chunk the flat item list into rows of `columns`, then
+  // virtualize the rows so only on-screen cards are mounted no matter how many
+  // pages have been loaded. `columns` tracks the responsive auto-fill width.
+  const [gridEl, setGridEl] = useState<HTMLDivElement | null>(null);
+  const [columns, setColumns] = useState(2);
+  useEffect(() => {
+    if (!gridEl) return;
+    // matches the CSS cells: minmax(150px, …) with a 16px column gap
+    const measure = () =>
+      setColumns(Math.max(1, Math.floor((gridEl.clientWidth + 16) / 166)));
+    measure();
+    if (typeof ResizeObserver === 'undefined') return; // SSR / jsdom
+    const ro = new ResizeObserver(measure);
+    ro.observe(gridEl);
+    return () => ro.disconnect();
+  }, [gridEl]);
+
+  const rows: ListItem[][] = [];
+  for (let i = 0; i < items.length; i += columns)
+    rows.push(items.slice(i, i + columns));
+
+  const virtualizer = useWindowVirtualizer({
+    count: rows.length,
+    estimateSize: () => 240, // card square + label; remeasured on mount
+    overscan: 4,
+    scrollMargin: gridEl?.offsetTop ?? 0,
+  });
+  const virtualRows = virtualizer.getVirtualItems();
+
+  // Prefetch the next page as the last row scrolls into view.
+  useEffect(() => {
+    const last = virtualRows.at(-1);
+    if (
+      last &&
+      last.index >= rows.length - 1 &&
+      hasNextPage &&
+      !isFetchingNextPage
+    )
+      fetchNextPage();
+  }, [
+    virtualRows,
+    rows.length,
+    hasNextPage,
+    isFetchingNextPage,
+    fetchNextPage,
+  ]);
+
   // Quick-add from the grid: the list item has no variant, so fetch the product
   // and add its first in-stock variant.
   const quickAdd = async (p: ListItem) => {
@@ -79,7 +130,6 @@ export default function ListScreen() {
           stock: v.stock,
         }),
       );
-      enqueueSnackbar(`${product.title} added to cart`, { variant: 'success' });
     } catch {
       enqueueSnackbar('Could not add item', { variant: 'error' });
     }
@@ -87,6 +137,24 @@ export default function ListScreen() {
 
   return (
     <Box sx={{ px: 2.5, pt: 1.5, pb: 4 }}>
+      {/* pull-to-refresh affordance (mobile) */}
+      {(pull > 0 || refreshing) && (
+        <Box
+          sx={{
+            height: pull,
+            mb: refreshing ? 1 : 0,
+            display: 'grid',
+            placeItems: 'center',
+            overflow: 'hidden',
+            fontFamily: mono,
+            fontSize: 10,
+            letterSpacing: '0.08em',
+            color: 'text.disabled',
+          }}
+        >
+          {refreshing ? 'REFRESHING…' : pull >= 70 ? 'RELEASE ↑' : 'PULL ↓'}
+        </Box>
+      )}
       <Box
         sx={{
           display: 'flex',
@@ -226,8 +294,15 @@ export default function ListScreen() {
       ) : isLoading ? (
         <Grid>
           {Array.from({ length: 8 }).map((_, i) => (
-            // biome-ignore lint/suspicious/noArrayIndexKey: static skeleton placeholders, no stable id
-            <Box key={i} sx={{ position: 'relative', aspectRatio: '1' }}>
+            <Box
+              // biome-ignore lint/suspicious/noArrayIndexKey: static skeleton placeholders, no stable id
+              key={i}
+              sx={{
+                position: 'relative',
+                aspectRatio: '1',
+                animation: 'mpulse 1.5s ease-in-out infinite',
+              }}
+            >
               <ProductImage alt="" />
             </Box>
           ))}
@@ -251,11 +326,41 @@ export default function ListScreen() {
         </CenterState>
       ) : (
         <>
-          <Grid>
-            {items.map((p) => (
-              <ProductCard key={p.id} p={p} onAdd={quickAdd} />
+          <Box
+            ref={setGridEl}
+            sx={{ mt: 1.75, position: 'relative' }}
+            style={{ height: `${virtualizer.getTotalSize()}px` }}
+          >
+            {virtualRows.map((vr) => (
+              <Box
+                key={vr.key}
+                data-index={vr.index}
+                ref={virtualizer.measureElement}
+                sx={{
+                  display: 'grid',
+                  gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))`,
+                  gap: '0 16px',
+                  pb: '20px',
+                }}
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  width: '100%',
+                  transform: `translateY(${vr.start - virtualizer.options.scrollMargin}px)`,
+                }}
+              >
+                {rows[vr.index].map((p, j) => (
+                  <ProductCard
+                    key={p.id}
+                    p={p}
+                    index={vr.index * columns + j}
+                    onAdd={quickAdd}
+                  />
+                ))}
+              </Box>
             ))}
-          </Grid>
+          </Box>
           {hasNextPage ? (
             <Button
               variant="outlined"

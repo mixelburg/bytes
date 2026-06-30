@@ -60,7 +60,12 @@ const keyframes = (
         '0%': { transform: 'scaleY(0)' },
         '100%': { transform: 'scaleY(1)' },
       },
-      '@keyframes mcheck': { '100%': { strokeDashoffset: 0 } },
+      // path uses pathLength=1, so the stroke draws from 1 → 0; resting state
+      // is 0 (fully drawn) so reduced-motion shows the complete checkmark.
+      '@keyframes mcheck': {
+        '0%': { strokeDashoffset: 1 },
+        '100%': { strokeDashoffset: 0 },
+      },
       // Toast auto-hide countdown hairline (scaleX 1 → 0).
       '@keyframes mcountdown': {
         '0%': { transform: 'scaleX(1)' },
