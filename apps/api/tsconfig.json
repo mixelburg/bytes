@@ -1,0 +1,11 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "target": "esnext",
+    "strict": true,
+    "types": ["bun"]
+  },
+  "include": ["src/**/*.ts", "prisma/**/*.ts"]
+}

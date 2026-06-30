@@ -1,0 +1,25 @@
+{
+  "name": "api",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "apps/api/src",
+  "projectType": "application",
+  "tags": [],
+  "targets": {
+    "serve": {
+      "command": "bun --watch src/main.ts",
+      "options": { "cwd": "apps/api" }
+    },
+    "db:push": {
+      "command": "bunx prisma db push",
+      "options": { "cwd": "apps/api" }
+    },
+    "db:seed": {
+      "command": "bunx prisma db seed",
+      "options": { "cwd": "apps/api" }
+    },
+    "db:studio": {
+      "command": "bunx prisma studio",
+      "options": { "cwd": "apps/api" }
+    }
+  }
+}

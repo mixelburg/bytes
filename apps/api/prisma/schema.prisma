@@ -1,0 +1,71 @@
+// SQLite for zero-setup local dev.
+// ponytail: SQLite, swap datasource provider to "postgresql" if you need real concurrency.
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// Catalog entry. Price + stock live on variants, not here.
+model Product {
+  id          Int              @id @default(autoincrement())
+  title       String
+  description String
+  category    String
+  image       String // hero / fallback image
+  rating      Float            @default(0)
+  createdAt   DateTime         @default(now())
+  // Denormalized from variants so the list sorts/filters by price + availability
+  // without per-row aggregation. Prices are static (no price-edit endpoint);
+  // totalStock is kept in sync inside the order transaction.
+  priceMin    Float            @default(0)
+  priceMax    Float            @default(0)
+  totalStock  Int              @default(0)
+  variants    ProductVariant[]
+
+  @@index([category])
+  @@index([priceMin])
+}
+
+// The purchasable unit. Every product has at least one (default has empty options).
+model ProductVariant {
+  id           Int         @id @default(autoincrement())
+  product      Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productId    Int
+  options      Json // e.g. { "size": "M", "color": "Red" } — ponytail: Json on SQLite; String-JSON fallback if rejected
+  optionsLabel String // denormalized display string, e.g. "M / Red" ("" for default)
+  price        Float
+  stock        Int         @default(0)
+  image        String
+  orderItems   OrderItem[]
+
+  @@index([productId])
+  @@index([price])
+}
+
+model Order {
+  id        String      @id @default(cuid())
+  total     Float
+  createdAt DateTime    @default(now())
+  // Delivery address — nullable so pre-tracking orders stay valid. Drives the
+  // tracking destination and the city-derived pass-point labels.
+  recipient String?
+  line1     String?
+  city      String?
+  postal    String?
+  country   String?
+  items     OrderItem[]
+}
+
+model OrderItem {
+  id        Int            @id @default(autoincrement())
+  order     Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  orderId   String
+  variant   ProductVariant @relation(fields: [variantId], references: [id])
+  variantId Int
+  quantity  Int
+  price     Float // unit price captured at purchase time
+}
