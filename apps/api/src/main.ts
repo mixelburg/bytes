@@ -254,7 +254,7 @@ const app = new Hono()
   // POST /images  (multipart form, field `file`) -> { key, url }
   .post('/images', async (c) => {
     const form = await c.req.parseBody();
-    const file = form['file'];
+    const file = form.file;
     if (!(file instanceof File))
       return c.json({ error: 'file field required' }, 400);
     if (!file.type.startsWith('image/'))

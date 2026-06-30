@@ -32,11 +32,11 @@ const initialState: OrderState = { status: 'idle', last: null, error: null };
 //   201 → success · 409 → insufficient stock · 400/other → invalid · throw → network
 export const placeOrder = createAsyncThunk<
   OrderResult,
-  { simulateFail?: boolean } | void,
+  { simulateFail?: boolean } | undefined,
   { state: RootState; rejectValue: PlaceError }
 >('order/place', async (arg, { getState, rejectWithValue }) => {
   // Demo affordance: force the network-error path without a real outage.
-  if (arg && arg.simulateFail) return rejectWithValue('network');
+  if (arg?.simulateFail) return rejectWithValue('network');
 
   const items = Object.values(getState().cart.items).map((e) => ({
     variantId: e.variantId,

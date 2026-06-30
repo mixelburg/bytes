@@ -62,7 +62,7 @@ async function fetchAndStore(url: string): Promise<void> {
     const key = `${crypto.randomUUID()}.${ext}`;
     await s3.write(key, buf, { type });
     keyByUrl.set(url, key);
-  } catch (e) {
+  } catch (_e) {
     failures.push(url);
   } finally {
     if (++processed % 200 === 0)
