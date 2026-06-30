@@ -1,5 +1,7 @@
 # Bytes Marketplace
 
+**Live demo:** [bstore.kroha.dev](https://bstore.kroha.dev) · API: [bstore-api.kroha.dev](https://bstore-api.kroha.dev)
+
 Mobile-friendly marketplace web app (React + Vite + MUI), packaged to native via **Capacitor**. Nx monorepo, **Bun** package manager. The UI reads/writes a typed **Hono + Prisma** backend over an `hc<AppType>` RPC client. Variant-based catalog built to scale to thousands of products (paginated list, search, category filter, sort).
 
 ## Stack
