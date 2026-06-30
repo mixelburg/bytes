@@ -1,13 +1,15 @@
 import {
+  keepPreviousData,
   useInfiniteQuery,
   useQuery,
-  keepPreviousData,
 } from '@tanstack/react-query';
-import { type InferResponseType } from 'hono/client';
+import type { InferResponseType } from 'hono/client';
 import { api } from '../api/client';
 
 // Types flow from the backend's route definitions — single source of truth.
-export type ListItem = InferResponseType<typeof api.products.$get>['items'][number];
+export type ListItem = InferResponseType<
+  typeof api.products.$get
+>['items'][number];
 export type ProductDetail = InferResponseType<
   (typeof api.products)[':id']['$get'],
   200

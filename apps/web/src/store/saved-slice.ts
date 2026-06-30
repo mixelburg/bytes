@@ -1,4 +1,8 @@
-import { createSlice, type PayloadAction, createSelector } from '@reduxjs/toolkit';
+import {
+  createSelector,
+  createSlice,
+  type PayloadAction,
+} from '@reduxjs/toolkit';
 import type { RootState } from './index';
 
 // Saved is just a set of product ids (a product is saved or not, regardless of
@@ -13,7 +17,8 @@ export function loadSaved(): SavedState {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     const ids = raw ? JSON.parse(raw) : [];
-    if (Array.isArray(ids) && ids.every((n) => typeof n === 'number')) return { ids };
+    if (Array.isArray(ids) && ids.every((n) => typeof n === 'number'))
+      return { ids };
   } catch {
     /* fall through to empty */
   }

@@ -1,4 +1,4 @@
-import { configureStore, combineSlices } from '@reduxjs/toolkit';
+import { combineSlices, configureStore } from '@reduxjs/toolkit';
 import cart from './cart-slice';
 import order from './order-slice';
 import saved, { loadSaved, persistSaved } from './saved-slice';

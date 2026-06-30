@@ -1,7 +1,7 @@
 import Box from '@mui/material/Box';
 import { useTheme } from '@mui/material/styles';
-import { mono } from '../theme';
 import type { TrackedOrder } from '../data/queries';
+import { mono } from '../theme';
 
 type Stop = TrackedOrder['stops'][number];
 
@@ -14,7 +14,10 @@ export function RouteSchematic({ stops }: { stops: Stop[] }) {
   const theme = useTheme();
   const ink = theme.vars!.palette.primary.main;
   const faint = theme.vars!.palette.faint;
-  const currentIndex = Math.max(0, stops.findIndex((s) => s.state === 'current'));
+  const currentIndex = Math.max(
+    0,
+    stops.findIndex((s) => s.state === 'current'),
+  );
   const lastIndex = stops.length - 1;
   const delivered = stops.every((s) => s.state === 'done');
   // Filled track stops at the courier (or the end once delivered).
@@ -71,12 +74,11 @@ export function RouteSchematic({ stops }: { stops: Stop[] }) {
                 display: 'grid',
                 placeItems: 'center',
                 border: `1.5px solid ${isDone || isCurrent ? ink : faint}`,
-                bgcolor:
-                  isCurrent
-                    ? 'background.paper'
-                    : isDone
-                      ? 'primary.main'
-                      : 'background.paper',
+                bgcolor: isCurrent
+                  ? 'background.paper'
+                  : isDone
+                    ? 'primary.main'
+                    : 'background.paper',
                 color: isDone ? 'primary.contrastText' : 'text.primary',
                 borderRadius: isDest ? '50%' : 0,
                 fontSize: 12,
@@ -90,24 +92,48 @@ export function RouteSchematic({ stops }: { stops: Stop[] }) {
               {isCurrent ? '◉' : isDone ? '✓' : ''}
             </Box>
 
-            <Box sx={{ flex: 1, minWidth: 0, display: 'flex', justifyContent: 'space-between', gap: 1 }}>
+            <Box
+              sx={{
+                flex: 1,
+                minWidth: 0,
+                display: 'flex',
+                justifyContent: 'space-between',
+                gap: 1,
+              }}
+            >
               <Box>
                 <Box
                   sx={{
                     fontSize: 13,
                     fontWeight: isCurrent ? 700 : 600,
-                    color: isDone || isCurrent ? 'text.primary' : 'text.secondary',
+                    color:
+                      isDone || isCurrent ? 'text.primary' : 'text.secondary',
                   }}
                 >
                   {stop.label}
                 </Box>
                 {isCurrent && !delivered && (
-                  <Box sx={{ fontFamily: mono, fontSize: 10, letterSpacing: '0.06em', color: 'text.disabled', mt: 0.25 }}>
+                  <Box
+                    sx={{
+                      fontFamily: mono,
+                      fontSize: 10,
+                      letterSpacing: '0.06em',
+                      color: 'text.disabled',
+                      mt: 0.25,
+                    }}
+                  >
                     COURIER HERE
                   </Box>
                 )}
               </Box>
-              <Box sx={{ fontFamily: mono, fontSize: 11, color: 'text.disabled', whiteSpace: 'nowrap' }}>
+              <Box
+                sx={{
+                  fontFamily: mono,
+                  fontSize: 11,
+                  color: 'text.disabled',
+                  whiteSpace: 'nowrap',
+                }}
+              >
                 {isDone ? fmtTime(stop.etaAt) : `~${fmtTime(stop.etaAt)}`}
               </Box>
             </Box>

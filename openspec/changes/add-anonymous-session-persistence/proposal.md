@@ -34,6 +34,6 @@ Today the cart lives only in Redux (lost on reload), order history isn't kept at
 
 ## Impact
 
-- **Backend** (`apps/api`): new `Session` model + `Order.sessionId` relation in `prisma/schema.prisma`; new routes in `src/main.ts` (`GET /session`, `PUT /session`, `GET /orders`), and `POST /orders` reads the session header. Requires `db:push` (no migrations configured for SQLite dev).
-- **Frontend** (`apps/web`): new `session` util + header injection into the `hc` client (`api/client.ts`); cart hydrate/sync; new `saved` RTK slice; new SAVED and order-history screens; SAVED/ME nav wired up.
+- **Backend** (`apps/api`): new `Session` model + `Order.sessionId` relation in `prisma/schema.prisma`; new routes in `src/main.ts` (`GET /session`, `PUT /session`, `GET /orders`), and `POST /orders` reads the session header (composing with `order-tracking`'s `address` capture). Requires `db:push` (no migrations configured for SQLite dev).
+- **Frontend** (`apps/web`): new `session` util + header injection into the `hc` client (`api/client.ts`); cart hydrate/sync; the `saved` slice (from `wire-saved-page`) loses `localStorage` and joins the session sync; new order-history screen + ME nav. The SAVED screen/slice/nav themselves come from `wire-saved-page`.
 - **No new dependencies.** Session id via `crypto.randomUUID()`, persistence via the existing Prisma/Hono/RTK/TanStack stacks.

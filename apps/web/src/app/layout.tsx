@@ -1,11 +1,11 @@
-import { styled, useColorScheme } from '@mui/material/styles';
 import Box from '@mui/material/Box';
+import { styled, useColorScheme } from '@mui/material/styles';
 import Typography from '@mui/material/Typography';
-import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { useAppSelector } from '../store/hooks';
-import { selectCartCount } from '../store/cart-slice';
-import { selectSavedCount } from '../store/saved-slice';
+import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { mono } from '../components/ui';
+import { selectCartCount } from '../store/cart-slice';
+import { useAppSelector } from '../store/hooks';
+import { selectSavedCount } from '../store/saved-slice';
 
 const Canvas = styled('div')(({ theme }) => ({
   minHeight: '100dvh',
@@ -69,11 +69,22 @@ export default function Layout() {
             variant="h5"
             component="div"
             onClick={() => navigate('/')}
-            sx={{ cursor: 'pointer', letterSpacing: '-0.03em', fontWeight: 800 }}
+            sx={{
+              cursor: 'pointer',
+              letterSpacing: '-0.03em',
+              fontWeight: 800,
+            }}
           >
             Market
           </Typography>
-          <Box sx={{ ml: 'auto', display: 'flex', alignItems: 'center', gap: 1.25 }}>
+          <Box
+            sx={{
+              ml: 'auto',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1.25,
+            }}
+          >
             <Box
               role="button"
               aria-label="Toggle theme"
@@ -113,7 +124,14 @@ export default function Layout() {
         </Box>
 
         {/* screen */}
-        <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+        <Box
+          sx={{
+            flex: 1,
+            display: 'flex',
+            flexDirection: 'column',
+            minHeight: 0,
+          }}
+        >
           <Outlet />
         </Box>
 
@@ -136,8 +154,16 @@ export default function Layout() {
           >
             {[
               { label: 'SHOP', active: onShop, go: () => navigate('/') },
-              { label: `SAVED${savedCount > 0 ? ` (${savedCount})` : ''}`, active: onSaved, go: () => navigate('/saved') },
-              { label: `CART${count > 0 ? ` (${count})` : ''}`, active: onCart, go: () => navigate('/cart') },
+              {
+                label: `SAVED${savedCount > 0 ? ` (${savedCount})` : ''}`,
+                active: onSaved,
+                go: () => navigate('/saved'),
+              },
+              {
+                label: `CART${count > 0 ? ` (${count})` : ''}`,
+                active: onCart,
+                go: () => navigate('/cart'),
+              },
               { label: 'ME', active: false },
             ].map((n) => (
               <Box

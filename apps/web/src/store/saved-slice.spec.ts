@@ -1,10 +1,10 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import reducer, {
-  toggleSaved,
-  removeSaved,
   clearSaved,
   loadSaved,
+  removeSaved,
   type SavedState,
+  toggleSaved,
 } from './saved-slice';
 
 const empty: SavedState = { ids: [] };

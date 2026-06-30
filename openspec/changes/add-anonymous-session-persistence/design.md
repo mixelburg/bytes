@@ -4,6 +4,8 @@ The app already has a typed Hono + Prisma backend and an `hc<AppType>` client. C
 
 Constraints: TypeScript with no `any`; reads via TanStack Query, cart/checkout writes via RTK; SQLite in dev (`db:push`, no migration files); MUI v9 + styled-components; every async flow needs loading/empty/error/success states.
 
+**In-flight changes this builds on.** `wire-saved-page` lands the `saved-items` UI + a `localStorage` saved slice; this change swaps that slice's persistence to the session blob (apply `wire-saved-page` first). `order-tracking` lands `/track/:id`, `GET /orders/:id`, and the delivery-address half of `POST /orders`; this change adds the orthogonal `sessionId` half of `POST /orders` and the `GET /orders` history list that links into `/track/:id`. The two are designed to compose, not collide.
+
 ## Goals / Non-Goals
 
 **Goals:**
@@ -46,7 +48,7 @@ model Session {
 - `GET /session` — upsert-on-read using the header id; returns `{ cart, saved }`. Upsert means the client never needs a separate "create" call.
 - `PUT /session` — body `{ cart?, saved? }`; upserts and overwrites whichever blob is present. One endpoint, last-write-wins.
 - `GET /orders` — returns the session's orders (newest first) with their items. Empty array if none / no header.
-- `POST /orders` — unchanged contract, but now reads `x-session-id` and stamps the order's `sessionId` inside the existing transaction.
+- `POST /orders` — this change adds only: read `x-session-id` and stamp the order's `sessionId` inside the existing transaction. It composes with `order-tracking`, which separately adds an `address` field to the same endpoint — the two deltas touch different fields and don't conflict.
 
 All read the id from a small `sessionId(c)` helper; requests without the header get an empty/neutral response rather than an error (the UI degrades, matching the existing "API down" posture).
 
@@ -54,25 +56,17 @@ All read the id from a small `sessionId(c)` helper; requests without the header 
 TanStack Query is for state the **server owns** and you cache/invalidate. Here the server is a dumb blob store — it never computes or validates the cart, it just holds a copy; the **client is the source of truth**. So cart/saved are Redux (interaction state with a server backup), and only orders — a genuine server-authoritative read — use TanStack Query.
 
 - **Cart → Redux.** High-frequency local edits (qty +/–), derived `subtotal/shipping/total/count` selectors, edited far more than read. In TanStack you'd optimistic-update on every click and the query cache would *become* the real state — reimplementing Redux inside `queryClient`. It already works in RTK, and CLAUDE.md mandates RTK for cart/checkout.
-- **Saved → Redux, alongside cart.** A `number[]`. It rides the *same* `PUT /session` blob as the cart, so a single owner must write that blob — otherwise two writers clobber each other's field. Keeping saved in the same store with the same debounced writer gives one write path, no race.
+- **Saved → Redux, alongside cart.** The `saved` slice already exists from `wire-saved-page` (a `number[]`, currently `localStorage`-backed). This change drops its `localStorage` persistence and routes it through the session blob: it rides the *same* `PUT /session` as the cart, so a single owner writes that blob — otherwise two writers clobber each other's field. One store, one debounced writer, no race.
 - **Order history → TanStack Query** (`useQuery(['orders'])`), matching the project's read/write split. Checkout success invalidates `['orders']`.
 
 ### Client sync: hydrate on load, single debounced write-back
 One bootstrap read fills both slices; one `store.subscribe` is the *only* thing that writes the blob.
 
 ```ts
-// saved-slice.ts — saved is just ids; toggle + hydrate
-const savedSlice = createSlice({
-  name: 'saved',
-  initialState: [] as number[],
-  reducers: {
-    toggleSaved: (s, { payload }: PayloadAction<number>) => {
-      const i = s.indexOf(payload); i === -1 ? s.push(payload) : s.splice(i, 1);
-    },
-    hydrateSaved: (_s, { payload }: PayloadAction<number[]>) => payload,
-  },
-});
-export const selectIsSaved = (id: number) => (s: RootState) => s.saved.includes(id);
+// saved-slice.ts — already exists from wire-saved-page (toggleSaved, selectIsSaved).
+// This change: drop its localStorage persistence, add a hydrateSaved reducer so the
+// bootstrap can seed it from the server.
+hydrateSaved: (_s, { payload }: PayloadAction<number[]>) => payload,
 
 // cart-slice.ts — one reducer to seed items from the server array
 hydrateCart: (_s, { payload }: PayloadAction<CartEntry[]>) =>

@@ -28,8 +28,12 @@ const round2 = (n: number) => Math.round(n * 100) / 100;
 
 // Platzi sometimes returns images as stringified arrays / escaped junk.
 const cleanUrl = (raw: unknown, fallbackSeed: number): string => {
-  const s = String(raw ?? '').replace(/[\[\]"\\]/g, '').trim();
-  return /^https?:\/\//.test(s) ? s : `https://picsum.photos/seed/bytes-${fallbackSeed}/400/400`;
+  const s = String(raw ?? '')
+    .replace(/[[\]"\\]/g, '')
+    .trim();
+  return /^https?:\/\//.test(s)
+    ? s
+    : `https://picsum.photos/seed/bytes-${fallbackSeed}/400/400`;
 };
 
 async function getJson(url: string): Promise<unknown> {
@@ -42,7 +46,11 @@ async function getJson(url: string): Promise<unknown> {
 
 async function fromFakeStore(): Promise<NewProduct[]> {
   const data = (await getJson('https://fakestoreapi.com/products')) as Array<{
-    title: string; description: string; price: number; category: string; image: string;
+    title: string;
+    description: string;
+    price: number;
+    category: string;
+    image: string;
     rating?: { rate?: number };
   }>;
   return data.map((p, i) => ({
@@ -57,9 +65,14 @@ async function fromFakeStore(): Promise<NewProduct[]> {
 }
 
 async function fromPlatzi(): Promise<NewProduct[]> {
-  const data = (await getJson('https://api.escuelajs.co/api/v1/products?limit=300&offset=0')) as Array<{
-    title: string; description: string; price: number;
-    category?: { name?: string }; images?: unknown[];
+  const data = (await getJson(
+    'https://api.escuelajs.co/api/v1/products?limit=300&offset=0',
+  )) as Array<{
+    title: string;
+    description: string;
+    price: number;
+    category?: { name?: string };
+    images?: unknown[];
   }>;
   return data.map((p, i) => ({
     title: p.title,
@@ -75,8 +88,13 @@ async function fromPlatzi(): Promise<NewProduct[]> {
 async function fromFakeApiNet(): Promise<NewProduct[]> {
   const body = (await getJson('https://fakeapi.net/products?limit=1000')) as {
     data?: Array<{
-      title: string; description: string; price: number; category: string; image: string;
-      rating?: { rate?: number }; stock?: number;
+      title: string;
+      description: string;
+      price: number;
+      category: string;
+      image: string;
+      rating?: { rate?: number };
+      stock?: number;
     }>;
   };
   return (body.data ?? []).map((p, i) => ({
@@ -92,7 +110,16 @@ async function fromFakeApiNet(): Promise<NewProduct[]> {
 
 // Last-resort synthetic so the DB is never left empty if every API is down.
 function synthetic(n: number): NewProduct[] {
-  const CATS = ['electronics', 'clothing', 'home', 'books', 'toys', 'sports', 'beauty', 'grocery'];
+  const CATS = [
+    'electronics',
+    'clothing',
+    'home',
+    'books',
+    'toys',
+    'sports',
+    'beauty',
+    'grocery',
+  ];
   return Array.from({ length: n }, (_, i) => ({
     title: `Product ${i + 1}`,
     description: `A quality item. SKU #${i + 1}.`,
@@ -131,14 +158,27 @@ function variantsFor(base: NewProduct): VariantSpec[] {
   }
   if (APPAREL.test(base.category) || APPAREL.test(base.title)) {
     const out: VariantSpec[] = [];
-    for (const size of ['S', 'M', 'L']) for (const color of ['Black', 'White']) out.push(mk({ size, color }, `${size} / ${color}`));
+    for (const size of ['S', 'M', 'L'])
+      for (const color of ['Black', 'White'])
+        out.push(mk({ size, color }, `${size} / ${color}`));
     return out;
   }
   // Default single variant — keeps the cart/order path uniform (always a variant).
-  return [{ options: {}, optionsLabel: '', price: base.price, stock: base.stock, image: base.image }];
+  return [
+    {
+      options: {},
+      optionsLabel: '',
+      price: base.price,
+      stock: base.stock,
+      image: base.image,
+    },
+  ];
 }
 
-async function settle(label: string, p: Promise<NewProduct[]>): Promise<NewProduct[]> {
+async function settle(
+  label: string,
+  p: Promise<NewProduct[]>,
+): Promise<NewProduct[]> {
   try {
     const items = await p;
     console.log(`  ${label}: ${items.length}`);
@@ -209,8 +249,12 @@ async function main() {
   await db.productVariant.deleteMany();
   await db.product.deleteMany();
 
-  const created = await db.product.createManyAndReturn({ data: built.map((b) => b.product) });
-  const variants = created.flatMap((row, i) => built[i].specs.map((s) => ({ ...s, productId: row.id })));
+  const created = await db.product.createManyAndReturn({
+    data: built.map((b) => b.product),
+  });
+  const variants = created.flatMap((row, i) =>
+    built[i].specs.map((s) => ({ ...s, productId: row.id })),
+  );
   await db.productVariant.createMany({ data: variants });
 
   console.log(

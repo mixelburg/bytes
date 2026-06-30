@@ -1,22 +1,22 @@
-import { StrictMode } from 'react';
-import * as ReactDOM from 'react-dom/client';
-import {
-  StyledEngineProvider,
-  ThemeProvider,
-  styled,
-} from '@mui/material/styles';
+import isPropValid from '@emotion/is-prop-valid';
 import CssBaseline from '@mui/material/CssBaseline';
 import GlobalStyles from '@mui/material/GlobalStyles';
+import {
+  StyledEngineProvider,
+  styled,
+  ThemeProvider,
+} from '@mui/material/styles';
 import { QueryClientProvider } from '@tanstack/react-query';
-import { SnackbarProvider, MaterialDesignContent } from 'notistack';
-import { StyleSheetManager } from 'styled-components';
-import isPropValid from '@emotion/is-prop-valid';
+import { MaterialDesignContent, SnackbarProvider } from 'notistack';
+import { StrictMode } from 'react';
+import * as ReactDOM from 'react-dom/client';
 import { Provider as ReduxProvider } from 'react-redux';
 import { RouterProvider } from 'react-router-dom';
-import theme, { mono } from './theme';
+import { StyleSheetManager } from 'styled-components';
 import { queryClient } from './query-client';
-import { store } from './store';
 import { router } from './router';
+import { store } from './store';
+import theme, { mono } from './theme';
 
 // styled-components v6 no longer filters props on its own. Without this, MUI
 // system props (Stack's direction/alignItems/justifyContent, etc.) leak onto
@@ -75,7 +75,7 @@ const toastComponents = {
 };
 
 const root = ReactDOM.createRoot(
-  document.getElementById('root') as HTMLElement
+  document.getElementById('root') as HTMLElement,
 );
 
 root.render(
@@ -101,5 +101,5 @@ root.render(
         </QueryClientProvider>
       </ReduxProvider>
     </StyleSheetManager>
-  </StrictMode>
+  </StrictMode>,
 );

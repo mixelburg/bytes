@@ -1,11 +1,11 @@
+import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
+import Typography from '@mui/material/Typography';
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Box from '@mui/material/Box';
-import Typography from '@mui/material/Typography';
-import Button from '@mui/material/Button';
+import { money } from '../data/format';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { resetOrder } from '../store/order-slice';
-import { money } from '../data/format';
 import { mono } from '../theme';
 
 export default function ConfirmScreen() {
@@ -53,14 +53,38 @@ export default function ConfirmScreen() {
       >
         ✓
       </Box>
-      <Typography component="h1" sx={{ fontSize: 23, fontWeight: 800, letterSpacing: '-0.02em', mt: 2.75 }}>
+      <Typography
+        component="h1"
+        sx={{
+          fontSize: 23,
+          fontWeight: 800,
+          letterSpacing: '-0.02em',
+          mt: 2.75,
+        }}
+      >
         Order placed
       </Typography>
-      <Typography sx={{ fontSize: 13, color: 'text.secondary', mt: 1, maxWidth: 240, lineHeight: 1.5 }}>
+      <Typography
+        sx={{
+          fontSize: 13,
+          color: 'text.secondary',
+          mt: 1,
+          maxWidth: 240,
+          lineHeight: 1.5,
+        }}
+      >
         Thanks! A confirmation is on its way. You’ll get tracking once it ships.
       </Typography>
 
-      <Box sx={{ mt: 3, width: '100%', maxWidth: 360, border: '1.5px solid', borderColor: 'primary.main' }}>
+      <Box
+        sx={{
+          mt: 3,
+          width: '100%',
+          maxWidth: 360,
+          border: '1.5px solid',
+          borderColor: 'primary.main',
+        }}
+      >
         {[
           ['Order no.', order.id],
           ['Items', String(order.count)],
@@ -78,7 +102,14 @@ export default function ConfirmScreen() {
             }}
           >
             <Box sx={{ color: 'text.disabled' }}>{k}</Box>
-            <Box sx={{ fontFamily: mono, fontWeight: k === 'Total paid' ? 600 : 400 }}>{v}</Box>
+            <Box
+              sx={{
+                fontFamily: mono,
+                fontWeight: k === 'Total paid' ? 600 : 400,
+              }}
+            >
+              {v}
+            </Box>
           </Box>
         ))}
       </Box>
@@ -90,7 +121,11 @@ export default function ConfirmScreen() {
       >
         Track order
       </Button>
-      <Button variant="outlined" onClick={done} sx={{ mt: 1.5, height: 48, px: 3, maxWidth: 360, width: '100%' }}>
+      <Button
+        variant="outlined"
+        onClick={done}
+        sx={{ mt: 1.5, height: 48, px: 3, maxWidth: 360, width: '100%' }}
+      >
         Continue shopping
       </Button>
     </Box>

@@ -1,16 +1,22 @@
-import { useNavigate } from 'react-router-dom';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
+import { useNavigate } from 'react-router-dom';
+import { priceLabel } from '../data/format';
+import type { ListItem } from '../data/queries';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { toggleSaved } from '../store/saved-slice';
-import type { ListItem } from '../data/queries';
-import { priceLabel } from '../data/format';
-import { Mono, SquareButton, ProductImage } from './ui';
 import { mono } from '../theme';
+import { Mono, ProductImage, SquareButton } from './ui';
 
 /** Catalog grid card — image, save toggle, quick-add, title, price, rating.
  *  Shared by the list and saved screens. */
-export default function ProductCard({ p, onAdd }: { p: ListItem; onAdd?: (p: ListItem) => void }) {
+export default function ProductCard({
+  p,
+  onAdd,
+}: {
+  p: ListItem;
+  onAdd?: (p: ListItem) => void;
+}) {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const saved = useAppSelector((s) => s.saved.ids.includes(p.id));
@@ -24,9 +30,18 @@ export default function ProductCard({ p, onAdd }: { p: ListItem; onAdd?: (p: Lis
         <ProductImage src={p.image} alt={p.title} />
         {/* save toggle — independent of navigation and quick-add */}
         <SquareButton
-          aria-label={saved ? `Remove ${p.title} from saved` : `Save ${p.title}`}
+          aria-label={
+            saved ? `Remove ${p.title} from saved` : `Save ${p.title}`
+          }
           aria-pressed={saved}
-          style={{ position: 'absolute', top: 8, right: 8, width: 32, height: 32, fontSize: 16 }}
+          style={{
+            position: 'absolute',
+            top: 8,
+            right: 8,
+            width: 32,
+            height: 32,
+            fontSize: 16,
+          }}
           onClick={(e) => {
             e.stopPropagation();
             dispatch(toggleSaved(p.id));
@@ -54,7 +69,14 @@ export default function ProductCard({ p, onAdd }: { p: ListItem; onAdd?: (p: Lis
           onAdd && (
             <SquareButton
               aria-label={`Add ${p.title} to cart`}
-              style={{ position: 'absolute', bottom: 8, right: 8, width: 32, height: 32, fontSize: 19 }}
+              style={{
+                position: 'absolute',
+                bottom: 8,
+                right: 8,
+                width: 32,
+                height: 32,
+                fontSize: 19,
+              }}
               onClick={(e) => {
                 e.stopPropagation();
                 onAdd(p);
@@ -65,9 +87,26 @@ export default function ProductCard({ p, onAdd }: { p: ListItem; onAdd?: (p: Lis
           )
         )}
       </Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', mt: 1, gap: 0.75 }}>
-        <Typography sx={{ fontSize: 13, fontWeight: 600, lineHeight: 1.15 }}>{p.title}</Typography>
-        <Box sx={{ fontFamily: mono, fontSize: 13, fontWeight: 600, whiteSpace: 'nowrap' }}>
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'baseline',
+          mt: 1,
+          gap: 0.75,
+        }}
+      >
+        <Typography sx={{ fontSize: 13, fontWeight: 600, lineHeight: 1.15 }}>
+          {p.title}
+        </Typography>
+        <Box
+          sx={{
+            fontFamily: mono,
+            fontSize: 13,
+            fontWeight: 600,
+            whiteSpace: 'nowrap',
+          }}
+        >
           {priceLabel(p.priceMin, p.priceMax)}
         </Box>
       </Box>

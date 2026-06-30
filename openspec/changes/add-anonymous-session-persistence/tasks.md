@@ -1,3 +1,5 @@
+> **Depends on `wire-saved-page`** (saved-items UI + slice) — apply that first. This change swaps the saved slice's persistence to the session and adds session/cart/order-history persistence. `POST /orders` here composes with `order-tracking`'s address capture.
+
 ## 1. Backend: data model
 
 - [ ] 1.1 Add `Session` model (`id` String @id, `cart` Json @default("[]"), `saved` Json @default("[]"), `createdAt`, `updatedAt`) to `apps/api/prisma/schema.prisma`
@@ -24,17 +26,16 @@
 - [ ] 4.2 Bootstrap on app start: `GET /session` once, dispatch `hydrateCart(cart)` + `hydrateSaved(saved)`
 - [ ] 4.3 Add the single debounced `store.subscribe` writer (ref-equality skip on `cart.items`/`saved`, ~500ms) that `PUT /session { cart, saved }` — the only thing that writes the blob
 
-## 5. Frontend: saved items
+## 5. Frontend: saved persistence (swap, not rebuild)
 
-- [ ] 5.1 Add `saved-slice.ts` (`initialState: number[]`, `toggleSaved`, `hydrateSaved`, `selectIsSaved`); mount in `combineSlices`
-- [ ] 5.2 Add a save/unsave control to the product detail + list cards bound to `toggleSaved`
-- [ ] 5.3 Add the SAVED screen listing saved products (resolve via product queries) with loading/empty/error states
-- [ ] 5.4 Wire the SAVED nav tab in `app/layout.tsx` to navigate to the screen + reflect active state
+- [ ] 5.1 Add a `hydrateSaved` reducer to the existing `saved-slice.ts` (from `wire-saved-page`)
+- [ ] 5.2 Remove the slice's `localStorage` read/write (persistence now flows through §4's session sync)
+- [ ] 5.3 Confirm the `/saved` screen and SAVED nav (owned by `wire-saved-page`) work unchanged against the session-hydrated set
 
 ## 6. Frontend: order history
 
 - [ ] 6.1 Add a `useOrders` TanStack Query hook (`['orders']` → `GET /orders`)
-- [ ] 6.2 Add the order-history screen with loading/empty/error states; wire the ME nav tab to it
+- [ ] 6.2 Add the order-history screen with loading/empty/error states; wire the ME nav tab to it; link each row to `order-tracking`'s `/track/:id`
 - [ ] 6.3 Invalidate `['orders']` on `placeOrder.fulfilled` (checkout success)
 
 ## 7. Tests

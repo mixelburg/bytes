@@ -1,4 +1,4 @@
-import { vi, describe, it, expect, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Configurable mock of the orders endpoint.
 const h = vi.hoisted(() => ({
@@ -17,8 +17,8 @@ vi.mock('../api/client', () => ({
   },
 }));
 
-import { makeStore } from './index';
 import { addItem } from './cart-slice';
+import { makeStore } from './index';
 import { placeOrder } from './order-slice';
 
 const snap = {
@@ -44,7 +44,11 @@ describe('placeOrder thunk', () => {
   });
 
   it('on 201 → success, records the order, and clears the cart', async () => {
-    h.resp = { ok: true, status: 201, json: async () => ({ id: 'ord_1', total: 50 }) };
+    h.resp = {
+      ok: true,
+      status: 201,
+      json: async () => ({ id: 'ord_1', total: 50 }),
+    };
     const store = storeWithItem();
     await store.dispatch(placeOrder());
     const s = store.getState();
@@ -54,7 +58,11 @@ describe('placeOrder thunk', () => {
   });
 
   it('on 409 → error=insufficientStock and keeps the cart', async () => {
-    h.resp = { ok: false, status: 409, json: async () => ({ error: 'insufficient' }) };
+    h.resp = {
+      ok: false,
+      status: 409,
+      json: async () => ({ error: 'insufficient' }),
+    };
     const store = storeWithItem();
     await store.dispatch(placeOrder());
     const s = store.getState();

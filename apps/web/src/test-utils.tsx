@@ -1,13 +1,13 @@
-import type { ReactElement } from 'react';
-import { render } from '@testing-library/react';
 import { ThemeProvider } from '@mui/material/styles';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { render } from '@testing-library/react';
 import { SnackbarProvider } from 'notistack';
+import type { ReactElement } from 'react';
 import { Provider as ReduxProvider } from 'react-redux';
-import { RouterProvider, createMemoryRouter } from 'react-router-dom';
-import theme from './theme';
-import { makeStore } from './store';
+import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import { routes } from './router';
+import { makeStore } from './store';
+import theme from './theme';
 
 /** Render the full app (fresh store + query client) at a given route. */
 export function renderApp(initial = '/') {
@@ -25,7 +25,7 @@ export function renderApp(initial = '/') {
           </SnackbarProvider>
         </ThemeProvider>
       </QueryClientProvider>
-    </ReduxProvider>
+    </ReduxProvider>,
   );
   return { store, ...utils };
 }
@@ -45,7 +45,7 @@ export function renderWithProviders(ui: ReactElement) {
             <SnackbarProvider>{ui}</SnackbarProvider>
           </ThemeProvider>
         </QueryClientProvider>
-      </ReduxProvider>
+      </ReduxProvider>,
     ),
   };
 }

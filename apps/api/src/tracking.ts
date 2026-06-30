@@ -12,7 +12,11 @@ export type Address = {
 
 export type StopState = 'done' | 'current' | 'pending';
 export type Stop = { label: string; etaAt: string; state: StopState };
-export type OrderStatus = 'processing' | 'in_transit' | 'out_for_delivery' | 'delivered';
+export type OrderStatus =
+  | 'processing'
+  | 'in_transit'
+  | 'out_for_delivery'
+  | 'delivered';
 
 export type Timeline = {
   status: OrderStatus;
@@ -27,7 +31,11 @@ export const TRACKING_DURATION_MS = 3 * 60_000;
 
 // Each leg's start offset as a fraction of TRACKING_DURATION_MS, plus a label
 // builder (the city is woven into the middle hubs). Last entry = arrival.
-const LEGS: { at: number; status: OrderStatus; label: (city: string) => string }[] = [
+const LEGS: {
+  at: number;
+  status: OrderStatus;
+  label: (city: string) => string;
+}[] = [
   { at: 0, status: 'processing', label: () => 'Warehouse — packed' },
   { at: 0.2, status: 'in_transit', label: (c) => `${c} sorting hub` },
   { at: 0.5, status: 'in_transit', label: () => 'In transit' },
@@ -35,7 +43,11 @@ const LEGS: { at: number; status: OrderStatus; label: (city: string) => string }
   { at: 1, status: 'delivered', label: () => 'Your address' },
 ];
 
-export function buildTimeline(createdAt: Date, address: Address, now: Date): Timeline {
+export function buildTimeline(
+  createdAt: Date,
+  address: Address,
+  now: Date,
+): Timeline {
   const city = address.city?.trim() || 'Local';
   const start = createdAt.getTime();
   const elapsed = now.getTime() - start;
@@ -49,7 +61,8 @@ export function buildTimeline(createdAt: Date, address: Address, now: Date): Tim
   const stops: Stop[] = LEGS.map((leg, i) => ({
     label: leg.label(city),
     etaAt: new Date(start + leg.at * TRACKING_DURATION_MS).toISOString(),
-    state: i < currentIndex ? 'done' : i === currentIndex ? 'current' : 'pending',
+    state:
+      i < currentIndex ? 'done' : i === currentIndex ? 'current' : 'pending',
   }));
 
   const delivered = currentIndex === LEGS.length - 1;

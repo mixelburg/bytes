@@ -1,9 +1,16 @@
-import { describe, it, expect } from 'vitest';
-import { buildTimeline, TRACKING_DURATION_MS, type Address } from './tracking';
+import { describe, expect, it } from 'vitest';
+import { type Address, buildTimeline, TRACKING_DURATION_MS } from './tracking';
 
-const addr: Address = { recipient: 'A', line1: '1 St', city: 'Berlin', postal: '10115', country: 'DE' };
+const addr: Address = {
+  recipient: 'A',
+  line1: '1 St',
+  city: 'Berlin',
+  postal: '10115',
+  country: 'DE',
+};
 const start = new Date('2026-01-01T00:00:00.000Z');
-const at = (frac: number) => new Date(start.getTime() + frac * TRACKING_DURATION_MS);
+const at = (frac: number) =>
+  new Date(start.getTime() + frac * TRACKING_DURATION_MS);
 
 describe('buildTimeline', () => {
   it('is deterministic for the same inputs', () => {

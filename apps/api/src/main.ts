@@ -2,7 +2,7 @@ import { S3Client } from 'bun';
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { db } from './db';
-import { buildTimeline, type Address } from './tracking';
+import { type Address, buildTimeline } from './tracking';
 
 const requireEnv = (key: string): string => {
   const value = process.env[key];
@@ -44,7 +44,11 @@ const app = new Hono()
   .get('/health', (c) => c.json({ ok: true }))
   // GET /products?page=1&limit=20&search=&category=&sort=price-asc
   .get('/products', async (c) => {
-    const page = clamp(parseInt(c.req.query('page') ?? '1', 10), 1, Number.MAX_SAFE_INTEGER);
+    const page = clamp(
+      parseInt(c.req.query('page') ?? '1', 10),
+      1,
+      Number.MAX_SAFE_INTEGER,
+    );
     const limit = clamp(parseInt(c.req.query('limit') ?? '20', 10), 1, 100);
     const search = c.req.query('search')?.trim() ?? '';
     const category = c.req.query('category')?.trim() ?? '';
@@ -62,18 +66,34 @@ const app = new Hono()
         orderBy,
         skip: (page - 1) * limit,
         take: limit,
-        select: { id: true, title: true, category: true, image: true, rating: true, priceMin: true, priceMax: true, totalStock: true },
+        select: {
+          id: true,
+          title: true,
+          category: true,
+          image: true,
+          rating: true,
+          priceMin: true,
+          priceMax: true,
+          totalStock: true,
+        },
       }),
       db.product.count({ where }),
     ]);
 
     // inStock derived from the denormalized totalStock; raw count stays server-side.
-    const items = rows.map(({ totalStock, ...p }) => ({ ...p, image: imageUrl(p.image), inStock: totalStock > 0 }));
+    const items = rows.map(({ totalStock, ...p }) => ({
+      ...p,
+      image: imageUrl(p.image),
+      inStock: totalStock > 0,
+    }));
 
     return c.json({ items, total, page, limit, hasMore: page * limit < total });
   })
   .get('/categories', async (c) => {
-    const rows = await db.product.findMany({ distinct: ['category'], select: { category: true } });
+    const rows = await db.product.findMany({
+      distinct: ['category'],
+      select: { category: true },
+    });
     return c.json(rows.map((r) => r.category).sort());
   })
   .get('/products/:id', async (c) => {
@@ -87,7 +107,10 @@ const app = new Hono()
     return c.json({
       ...product,
       image: imageUrl(product.image),
-      variants: product.variants.map((v) => ({ ...v, image: imageUrl(v.image) })),
+      variants: product.variants.map((v) => ({
+        ...v,
+        image: imageUrl(v.image),
+      })),
     });
   })
   // POST /orders { items: [{ variantId, quantity }] }
@@ -102,7 +125,14 @@ const app = new Hono()
       variantId: Number((it as Record<string, unknown>).variantId),
       quantity: Number((it as Record<string, unknown>).quantity),
     }));
-    if (parsed.some((it) => !Number.isInteger(it.variantId) || !Number.isInteger(it.quantity) || it.quantity < 1)) {
+    if (
+      parsed.some(
+        (it) =>
+          !Number.isInteger(it.variantId) ||
+          !Number.isInteger(it.quantity) ||
+          it.quantity < 1,
+      )
+    ) {
       return c.json({ error: 'invalid items' }, 400);
     }
 
@@ -130,23 +160,62 @@ const app = new Hono()
         let total = 0;
         const lines = parsed.map((it) => {
           const variant = byId.get(it.variantId);
-          if (!variant) throw new Response(JSON.stringify({ error: `unknown variant ${it.variantId}` }), { status: 400 });
-          if (variant.stock < it.quantity) throw new Response(JSON.stringify({ error: `insufficient stock for variant ${variant.id}` }), { status: 409 });
+          if (!variant)
+            throw new Response(
+              JSON.stringify({ error: `unknown variant ${it.variantId}` }),
+              { status: 400 },
+            );
+          if (variant.stock < it.quantity)
+            throw new Response(
+              JSON.stringify({
+                error: `insufficient stock for variant ${variant.id}`,
+              }),
+              { status: 409 },
+            );
           total += variant.price * it.quantity;
-          return { variantId: variant.id, productId: variant.productId, quantity: it.quantity, price: variant.price };
+          return {
+            variantId: variant.id,
+            productId: variant.productId,
+            quantity: it.quantity,
+            price: variant.price,
+          };
         });
 
         // Decrement variant stock and keep the product's denormalized totalStock in sync.
         const byProduct = new Map<number, number>();
-        for (const l of lines) byProduct.set(l.productId, (byProduct.get(l.productId) ?? 0) + l.quantity);
+        for (const l of lines)
+          byProduct.set(
+            l.productId,
+            (byProduct.get(l.productId) ?? 0) + l.quantity,
+          );
 
         await Promise.all([
-          ...lines.map((l) => tx.productVariant.update({ where: { id: l.variantId }, data: { stock: { decrement: l.quantity } } })),
-          ...[...byProduct].map(([productId, qty]) => tx.product.update({ where: { id: productId }, data: { totalStock: { decrement: qty } } })),
+          ...lines.map((l) =>
+            tx.productVariant.update({
+              where: { id: l.variantId },
+              data: { stock: { decrement: l.quantity } },
+            }),
+          ),
+          ...[...byProduct].map(([productId, qty]) =>
+            tx.product.update({
+              where: { id: productId },
+              data: { totalStock: { decrement: qty } },
+            }),
+          ),
         ]);
 
         return tx.order.create({
-          data: { total, ...address, items: { create: lines.map(({ variantId, quantity, price }) => ({ variantId, quantity, price })) } },
+          data: {
+            total,
+            ...address,
+            items: {
+              create: lines.map(({ variantId, quantity, price }) => ({
+                variantId,
+                quantity,
+                price,
+              })),
+            },
+          },
           include: { items: true },
         });
       })
@@ -160,7 +229,9 @@ const app = new Hono()
   })
   // GET /orders/:id -> order + deterministic delivery timeline (for tracking)
   .get('/orders/:id', async (c) => {
-    const order = await db.order.findUnique({ where: { id: c.req.param('id') } });
+    const order = await db.order.findUnique({
+      where: { id: c.req.param('id') },
+    });
     if (!order) return c.json({ error: 'not found' }, 404);
 
     const address: Address = {
@@ -184,11 +255,19 @@ const app = new Hono()
   .post('/images', async (c) => {
     const form = await c.req.parseBody();
     const file = form['file'];
-    if (!(file instanceof File)) return c.json({ error: 'file field required' }, 400);
-    if (!file.type.startsWith('image/')) return c.json({ error: 'must be an image' }, 415);
-    if (file.size > 5 * 1024 * 1024) return c.json({ error: 'image too large (max 5MB)' }, 413);
+    if (!(file instanceof File))
+      return c.json({ error: 'file field required' }, 400);
+    if (!file.type.startsWith('image/'))
+      return c.json({ error: 'must be an image' }, 415);
+    if (file.size > 5 * 1024 * 1024)
+      return c.json({ error: 'image too large (max 5MB)' }, 413);
 
-    const ext = file.name.split('.').pop()?.toLowerCase().replace(/[^a-z0-9]/g, '') || 'img';
+    const ext =
+      file.name
+        .split('.')
+        .pop()
+        ?.toLowerCase()
+        .replace(/[^a-z0-9]/g, '') || 'img';
     const key = `${crypto.randomUUID()}.${ext}`;
     await s3.write(key, file, { type: file.type });
 

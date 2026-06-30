@@ -1,6 +1,6 @@
-import { useState } from 'react';
-import { styled } from '@mui/material/styles';
 import Box from '@mui/material/Box';
+import { styled } from '@mui/material/styles';
+import { useState } from 'react';
 import { mono } from '../theme';
 
 export { mono };
@@ -18,7 +18,12 @@ export function ProductImage({ src, alt }: { src?: string; alt: string }) {
           alt={alt}
           loading="lazy"
           onError={() => setBroken(true)}
-          sx={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+          sx={{
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
+            display: 'block',
+          }}
         />
       )}
     </Striped>
@@ -103,11 +108,25 @@ export function QtyStepper({
         role="button"
         aria-label="Decrease quantity"
         onClick={onDec}
-        sx={{ cursor: 'pointer', width: cell, height, display: 'grid', placeItems: 'center', fontSize: 18 }}
+        sx={{
+          cursor: 'pointer',
+          width: cell,
+          height,
+          display: 'grid',
+          placeItems: 'center',
+          fontSize: 18,
+        }}
       >
         −
       </Box>
-      <Box sx={{ minWidth: 28, textAlign: 'center', fontWeight: 600, fontSize: 14 }}>
+      <Box
+        sx={{
+          minWidth: 28,
+          textAlign: 'center',
+          fontWeight: 600,
+          fontSize: 14,
+        }}
+      >
         {qty}
       </Box>
       <Box
@@ -170,7 +189,13 @@ export function CenterState({
       </Box>
       <Box sx={{ fontSize: 18, fontWeight: 700, mt: 2.5 }}>{title}</Box>
       <Box
-        sx={{ fontSize: 13, color: 'text.secondary', mt: 1, maxWidth: 240, lineHeight: 1.5 }}
+        sx={{
+          fontSize: 13,
+          color: 'text.secondary',
+          mt: 1,
+          maxWidth: 240,
+          lineHeight: 1.5,
+        }}
       >
         {body}
       </Box>

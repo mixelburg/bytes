@@ -1,12 +1,16 @@
-import { defineConfig } from 'vitest/config';
 import { fileURLToPath } from 'node:url';
+import { defineConfig } from 'vitest/config';
 
 // Point Prisma at the seeded dev DB with an absolute path so the test is cwd-independent.
 const dbPath = fileURLToPath(new URL('./prisma/dev.db', import.meta.url));
 
 export default defineConfig({
   // `bun` isn't resolvable under Node; stub it (tests do no real S3 I/O).
-  resolve: { alias: { bun: fileURLToPath(new URL('./test/bun-stub.ts', import.meta.url)) } },
+  resolve: {
+    alias: {
+      bun: fileURLToPath(new URL('./test/bun-stub.ts', import.meta.url)),
+    },
+  },
   test: {
     environment: 'node',
     include: ['src/**/*.spec.ts'],
