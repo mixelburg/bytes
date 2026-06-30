@@ -45,6 +45,11 @@ const sessionId = (c: Context): string | null => c.req.header('x-session-id') ??
 // which the UI consumes via `hc<AppType>` for an end-to-end typed client.
 const app = new Hono()
   .use('*', cors())
+  // Last-resort handler: any unhandled throw becomes clean JSON, not a leaked stack.
+  .onError((err, c) => {
+    console.error(err);
+    return c.json({ error: 'internal error' }, 500);
+  })
   .get('/health', (c) => c.json({ ok: true }))
   // GET /products?page=1&limit=20&search=&category=&sort=price-asc
   .get('/products', async (c) => {
@@ -97,6 +102,7 @@ const app = new Hono()
     const rows = await db.product.findMany({
       distinct: ['category'],
       select: { category: true },
+      take: 100, // ponytail: bound the scan; raise if a real catalog exceeds 100 categories
     });
     return c.json(rows.map((r) => r.category).sort());
   })
@@ -136,6 +142,7 @@ const app = new Hono()
       where: { sessionId: sid },
       orderBy: { createdAt: 'desc' },
       include: { items: true },
+      take: 100, // ponytail: newest 100; add page/limit if history needs to go deeper
     });
     return c.json(
       orders.map((o) => ({

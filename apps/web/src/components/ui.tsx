@@ -1,28 +1,59 @@
 import Box from '@mui/material/Box';
 import { styled } from '@mui/material/styles';
 import { useState } from 'react';
+import { useTween } from '../motion';
 import { mono } from '../theme';
 
 export { mono };
 
+/** A number that tweens to its new value (prices, totals). `format` renders the
+ *  interpolated value — round inside it so mid-tween frames stay clean. */
+export function Rolling({
+  value,
+  format,
+}: {
+  value: number;
+  format: (n: number) => string;
+}) {
+  return <>{format(useTween(value))}</>;
+}
+
 /** Real product image over the striped tile; falls back to stripes on error
- *  or while missing. Fills its (relatively-positioned, sized) parent. */
+ *  or while missing. Fills its (relatively-positioned, sized) parent. A sweep
+ *  shimmers over the placeholder until the real image loads. */
 export function ProductImage({ src, alt }: { src?: string; alt: string }) {
   const [broken, setBroken] = useState(false);
+  const [loaded, setLoaded] = useState(false);
+  const showImg = !!src && !broken;
   return (
-    <Striped sx={{ position: 'absolute', inset: 0 }}>
-      {src && !broken && (
+    <Striped sx={{ position: 'absolute', inset: 0, overflow: 'hidden' }}>
+      {showImg && !loaded && (
+        <Box
+          aria-hidden
+          sx={{
+            position: 'absolute',
+            inset: 0,
+            background:
+              'linear-gradient(90deg, transparent, rgba(255,255,255,.14), transparent)',
+            animation: 'mshimmer 1.4s ease-in-out infinite',
+          }}
+        />
+      )}
+      {showImg && (
         <Box
           component="img"
           src={src}
           alt={alt}
           loading="lazy"
           onError={() => setBroken(true)}
+          onLoad={() => setLoaded(true)}
           sx={{
             width: '100%',
             height: '100%',
             objectFit: 'cover',
             display: 'block',
+            opacity: loaded ? 1 : 0,
+            transition: 'opacity .3s ease',
           }}
         />
       )}

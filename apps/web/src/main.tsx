@@ -45,6 +45,27 @@ const keyframes = (
         '0%': { transform: 'scale(.85)', opacity: 0 },
         '100%': { transform: 'scale(1)', opacity: 1 },
       },
+      // Skeleton breathing, scrim fade, image-load shimmer sweep.
+      '@keyframes mpulse': {
+        '0%,100%': { opacity: 0.55 },
+        '50%': { opacity: 0.85 },
+      },
+      '@keyframes mfade': { '0%': { opacity: 0 }, '100%': { opacity: 1 } },
+      '@keyframes mshimmer': {
+        '0%': { transform: 'translateX(-100%)' },
+        '100%': { transform: 'translateX(100%)' },
+      },
+      // Route-track draw-in (scaleY from the top) and confirm checkmark stroke.
+      '@keyframes mdraw': {
+        '0%': { transform: 'scaleY(0)' },
+        '100%': { transform: 'scaleY(1)' },
+      },
+      '@keyframes mcheck': { '100%': { strokeDashoffset: 0 } },
+      // Toast auto-hide countdown hairline (scaleX 1 → 0).
+      '@keyframes mcountdown': {
+        '0%': { transform: 'scaleX(1)' },
+        '100%': { transform: 'scaleX(0)' },
+      },
       '@media (prefers-reduced-motion: reduce)': {
         '*': { animation: 'none !important' },
       },
@@ -57,6 +78,8 @@ const keyframes = (
 const Toast = styled(MaterialDesignContent)(({ theme }) => {
   const v = theme.vars ?? theme;
   return {
+    position: 'relative',
+    overflow: 'hidden',
     borderRadius: 0,
     border: `1.5px solid ${v.palette.primary.main}`,
     backgroundColor: v.palette.background.paper,
@@ -65,8 +88,21 @@ const Toast = styled(MaterialDesignContent)(({ theme }) => {
     fontFamily: mono,
     fontWeight: 600,
     letterSpacing: '0.02em',
+    animation: 'mslide .22s ease both',
     '& #notistack-snackbar': { padding: 0 },
     '&.notistack-MuiContent-error': { color: v.palette.errtext },
+    // hairline that depletes over the 4s auto-hide window
+    '&::after': {
+      content: '""',
+      position: 'absolute',
+      left: 0,
+      bottom: 0,
+      height: 2,
+      width: '100%',
+      transformOrigin: 'left',
+      backgroundColor: v.palette.primary.main,
+      animation: 'mcountdown 4s linear forwards',
+    },
   };
 });
 

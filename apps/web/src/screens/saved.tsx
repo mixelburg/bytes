@@ -86,7 +86,9 @@ export default function SavedScreen() {
         <Button
           variant="contained"
           sx={{ mt: 2.5, height: 46, px: 3 }}
-          onClick={() => queries.forEach((q) => q.refetch())}
+          onClick={() => {
+            for (const q of queries) q.refetch();
+          }}
         >
           Retry
         </Button>

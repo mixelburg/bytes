@@ -1,0 +1,39 @@
+services:
+  api:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.api
+    restart: unless-stopped
+    environment:
+      PORT: 3001
+      S3_ENDPOINT: http://188.245.231.176:9000
+      S3_PUBLIC_URL: https://s3.kroha.dev
+      S3_BUCKET: bytes-products
+      # credentials injected from Dokploy env (kept out of git)
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY}
+      S3_SECRET_KEY: ${S3_SECRET_KEY}
+    volumes:
+      - bytes_data:/data
+    networks:
+      - dokploy-network
+    expose:
+      - "3001"
+
+  web:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.web
+      args:
+        VITE_API_URL: https://bstore-api.kroha.dev
+    restart: unless-stopped
+    networks:
+      - dokploy-network
+    expose:
+      - "80"
+
+volumes:
+  bytes_data:
+
+networks:
+  dokploy-network:
+    external: true

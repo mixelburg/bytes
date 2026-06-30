@@ -6,7 +6,8 @@ generator client {
 
 datasource db {
   provider = "sqlite"
-  url      = env("DATABASE_URL")
+  // Prisma 7: connection url moved to prisma.config.ts (CLI) + the driver
+  // adapter in src/db.ts (runtime). No `url` in the schema anymore.
 }
 
 // Catalog entry. Price + stock live on variants, not here.

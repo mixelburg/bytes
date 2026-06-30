@@ -54,7 +54,7 @@ export function RouteSchematic({ stops }: { stops: Stop[] }) {
         const isDest = i === lastIndex;
         return (
           <Box
-            key={i}
+            key={stop.label}
             sx={{
               position: 'relative',
               display: 'flex',

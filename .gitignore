@@ -30,3 +30,6 @@ vitest.config.*.timestamp*
 # Prisma SQLite (local dev db)
 apps/api/prisma/*.db
 apps/api/prisma/*.db-journal
+# stray runtime sqlite db (prisma.config resolves file:./dev.db here)
+apps/api/dev.db
+apps/api/*.db

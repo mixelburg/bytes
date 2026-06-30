@@ -226,6 +226,7 @@ export default function ListScreen() {
       ) : isLoading ? (
         <Grid>
           {Array.from({ length: 8 }).map((_, i) => (
+            // biome-ignore lint/suspicious/noArrayIndexKey: static skeleton placeholders, no stable id
             <Box key={i} sx={{ position: 'relative', aspectRatio: '1' }}>
               <ProductImage alt="" />
             </Box>
