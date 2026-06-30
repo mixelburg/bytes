@@ -4,7 +4,7 @@
 TBD - created by archiving change wire-ui-to-hono. Update Purpose after archive.
 ## Requirements
 ### Requirement: Variant-based cart
-The cart SHALL key line items by `variantId` (not product id). Adding an item SHALL require a resolved variant; quantity changes SHALL be clamped to the variant's known `stock`.
+The cart SHALL key line items by `variantId` (not product id). Adding an item SHALL require a resolved variant; quantity changes SHALL be clamped to the variant's known `stock`. The cart SHALL persist server-side, scoped to the anonymous session: it is hydrated from the server on load and written back (debounced) on change, so it survives reloads. Redux remains the in-memory working copy; the server is authoritative on price and stock only at order time.
 
 #### Scenario: Add a variant
 - **WHEN** the user adds a selected in-stock variant from the detail screen
@@ -21,6 +21,20 @@ The cart SHALL key line items by `variantId` (not product id). Adding an item SH
 #### Scenario: Remove a line
 - **WHEN** the user removes a line
 - **THEN** that `variantId` is dropped from the cart and totals recompute
+
+#### Scenario: Cart survives reload
+- **WHEN** the user adds items and reloads the app
+- **THEN** the cart is rehydrated from the server for the current session with the same lines and quantities
+
+#### Scenario: Cart changes persist
+- **WHEN** the user changes the cart (add, set quantity, remove, clear)
+- **THEN** the change is written back to the server for the current session (debounced), last-write-wins
+
+<!-- NOTE: "Order placement via the API" is intentionally NOT modified here.
+     The change `order-tracking` owns that requirement's delta (delivery address +
+     "track order" link). Session attribution of placed orders lives in this
+     change's `order-history` capability ("Orders attach to the session"), which
+     composes with order-tracking's address capture on the same POST /orders. -->
 
 ### Requirement: Cart display and totals
 Cart lines SHALL display product title, variant label, unit price, and line total resolved from the API records, and the cart SHALL compute subtotal, shipping, and total. Server-provided prices are the display source of truth.

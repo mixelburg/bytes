@@ -1,7 +1,7 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import reducer, {
   clearSaved,
-  loadSaved,
+  hydrateSaved,
   removeSaved,
   type SavedState,
   toggleSaved,
@@ -32,35 +32,12 @@ describe('saved slice', () => {
   it('clearSaved empties the set', () => {
     expect(reducer({ ids: [1, 2] }, clearSaved()).ids).toEqual([]);
   });
-});
 
-describe('loadSaved', () => {
-  // jsdom here doesn't expose localStorage, so stub a minimal in-memory one.
-  let store: Record<string, string>;
-  beforeEach(() => {
-    store = {};
-    vi.stubGlobal('localStorage', {
-      getItem: (k: string) => store[k] ?? null,
-      setItem: (k: string, v: string) => void (store[k] = v),
-    });
+  it('hydrateSaved replaces the set with the server payload', () => {
+    expect(reducer({ ids: [1, 2] }, hydrateSaved([3, 9])).ids).toEqual([3, 9]);
   });
 
-  it('returns empty when storage is missing', () => {
-    expect(loadSaved()).toEqual({ ids: [] });
-  });
-
-  it('returns empty when storage is corrupt', () => {
-    store['bytes.saved'] = 'not json{';
-    expect(loadSaved()).toEqual({ ids: [] });
-  });
-
-  it('ignores a non-number payload', () => {
-    store['bytes.saved'] = JSON.stringify(['a', 'b']);
-    expect(loadSaved()).toEqual({ ids: [] });
-  });
-
-  it('rehydrates a valid id array', () => {
-    store['bytes.saved'] = JSON.stringify([3, 9]);
-    expect(loadSaved()).toEqual({ ids: [3, 9] });
+  it('hydrateSaved with an empty array clears the set', () => {
+    expect(reducer({ ids: [1, 2] }, hydrateSaved([])).ids).toEqual([]);
   });
 });

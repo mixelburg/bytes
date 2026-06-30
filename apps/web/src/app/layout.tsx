@@ -30,7 +30,7 @@ const AppSurface = styled('div')(({ theme }) => ({
   },
 }));
 
-const NAV_ROUTES = ['/', '/saved', '/cart'];
+const NAV_ROUTES = ['/', '/saved', '/cart', '/orders'];
 
 export default function Layout() {
   const navigate = useNavigate();
@@ -44,6 +44,7 @@ export default function Layout() {
   const onShop = pathname === '/';
   const onSaved = pathname === '/saved';
   const onCart = pathname === '/cart';
+  const onOrders = pathname === '/orders';
 
   return (
     <Canvas>
@@ -164,14 +165,14 @@ export default function Layout() {
                 active: onCart,
                 go: () => navigate('/cart'),
               },
-              { label: 'ME', active: false },
+              { label: 'ME', active: onOrders, go: () => navigate('/orders') },
             ].map((n) => (
               <Box
                 key={n.label}
-                role={n.go ? 'button' : undefined}
+                role="button"
                 onClick={n.go}
                 sx={{
-                  cursor: n.go ? 'pointer' : 'default',
+                  cursor: 'pointer',
                   fontFamily: mono,
                   fontSize: 10,
                   letterSpacing: '0.04em',

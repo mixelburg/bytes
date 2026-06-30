@@ -6,32 +6,10 @@ import {
 import type { RootState } from './index';
 
 // Saved is just a set of product ids (a product is saved or not, regardless of
-// variant). Stored as an array so it serializes straight to localStorage and
-// passes RTK's serializable-state check (a Set would not).
+// variant). Stored as an array so it passes RTK's serializable-state check (a
+// Set would not). Persistence is server-side per anonymous session — hydrated on
+// load and written back via the shared session sync (see store/sync.ts).
 export type SavedState = { ids: number[] };
-
-const STORAGE_KEY = 'bytes.saved';
-
-// Defensive load: missing/corrupt storage → empty, never throws.
-export function loadSaved(): SavedState {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    const ids = raw ? JSON.parse(raw) : [];
-    if (Array.isArray(ids) && ids.every((n) => typeof n === 'number'))
-      return { ids };
-  } catch {
-    /* fall through to empty */
-  }
-  return { ids: [] };
-}
-
-export function persistSaved(state: SavedState): void {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state.ids));
-  } catch {
-    /* localStorage unavailable/full — degrade to in-memory for the session */
-  }
-}
 
 const savedSlice = createSlice({
   name: 'saved',
@@ -49,10 +27,15 @@ const savedSlice = createSlice({
     clearSaved: (state) => {
       state.ids = [];
     },
+    // Seed the saved set from the server on app start (session hydrate).
+    hydrateSaved: (state, { payload }: PayloadAction<number[]>) => {
+      state.ids = payload;
+    },
   },
 });
 
-export const { toggleSaved, removeSaved, clearSaved } = savedSlice.actions;
+export const { toggleSaved, removeSaved, clearSaved, hydrateSaved } =
+  savedSlice.actions;
 export default savedSlice.reducer;
 
 // ── selectors ───────────────────────────────────────────────────────────────

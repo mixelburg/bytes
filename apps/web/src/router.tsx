@@ -5,6 +5,7 @@ import CheckoutScreen from './screens/checkout';
 import ConfirmScreen from './screens/confirm';
 import DetailScreen from './screens/detail';
 import ListScreen from './screens/list';
+import OrdersScreen from './screens/orders';
 import SavedScreen from './screens/saved';
 import TrackScreen from './screens/track';
 
@@ -18,6 +19,7 @@ export const routes: RouteObject[] = [
       { path: 'p/:id', element: <DetailScreen /> },
       { path: 'saved', element: <SavedScreen /> },
       { path: 'cart', element: <CartScreen /> },
+      { path: 'orders', element: <OrdersScreen /> },
       { path: 'checkout', element: <CheckoutScreen /> },
       { path: 'confirm', element: <ConfirmScreen /> },
       { path: 'track/:id', element: <TrackScreen /> },

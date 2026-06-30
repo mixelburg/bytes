@@ -1,5 +1,6 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 import { api } from '../api/client';
+import { queryClient } from '../query-client';
 import type { RootState } from './index';
 
 // The route returns the full Prisma order; Hono can't infer its recursive type
@@ -43,7 +44,7 @@ export const placeOrder = createAsyncThunk<
     quantity: e.qty,
   }));
 
-  let res;
+  let res: Awaited<ReturnType<typeof api.orders.$post>>;
   try {
     res = await api.orders.$post({ json: { items, address: DEFAULT_ADDRESS } });
   } catch {
@@ -53,6 +54,8 @@ export const placeOrder = createAsyncThunk<
   if (res.ok) {
     const order = (await res.json()) as OrderResponse;
     const count = items.reduce((s, i) => s + i.quantity, 0);
+    // New order now exists server-side — refresh the history list.
+    queryClient.invalidateQueries({ queryKey: ['orders'] });
     return { id: order.id, total: order.total, count };
   }
   if (res.status === 409) return rejectWithValue('insufficientStock');

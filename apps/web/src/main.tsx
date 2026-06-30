@@ -16,7 +16,11 @@ import { StyleSheetManager } from 'styled-components';
 import { queryClient } from './query-client';
 import { router } from './router';
 import { store } from './store';
+import { initSessionSync } from './store/sync';
 import theme, { mono } from './theme';
+
+// Hydrate cart + saved from the backend session and start the write-back sync.
+initSessionSync();
 
 // styled-components v6 no longer filters props on its own. Without this, MUI
 // system props (Stack's direction/alignItems/justifyContent, etc.) leak onto

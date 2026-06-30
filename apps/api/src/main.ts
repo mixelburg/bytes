@@ -1,5 +1,5 @@
 import { S3Client } from 'bun';
-import { Hono } from 'hono';
+import { type Context, Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { db } from './db';
 import { type Address, buildTimeline } from './tracking';
@@ -36,6 +36,10 @@ type SortKey = keyof typeof SORTS;
 
 const clamp = (n: number, min: number, max: number) =>
   Number.isFinite(n) ? Math.min(Math.max(n, min), max) : min;
+
+// Anonymous identity: the opaque id the client mints and sends on every request.
+// No header → no session (endpoints degrade to empty/neutral, never error).
+const sessionId = (c: Context): string | null => c.req.header('x-session-id') ?? null;
 
 // Routes are chained so Hono accumulates the full type into `AppType`,
 // which the UI consumes via `hc<AppType>` for an end-to-end typed client.
@@ -96,6 +100,52 @@ const app = new Hono()
     });
     return c.json(rows.map((r) => r.category).sort());
   })
+  // GET /session -> { cart, saved } for the current anonymous session (upsert-on-read).
+  .get('/session', async (c) => {
+    const sid = sessionId(c);
+    if (!sid) return c.json({ cart: [], saved: [] });
+    const s = await db.session.upsert({
+      where: { id: sid },
+      create: { id: sid },
+      update: {},
+      select: { cart: true, saved: true },
+    });
+    return c.json({ cart: s.cart, saved: s.saved });
+  })
+  // PUT /session { cart?, saved? } -> overwrite whichever blob is provided.
+  .put('/session', async (c) => {
+    const sid = sessionId(c);
+    if (!sid) return c.json({ ok: false });
+    const body = await c.req.json().catch(() => null);
+    // Only accept arrays; ignore anything else so a bad body can't corrupt the blob.
+    const cart = Array.isArray(body?.cart) ? body.cart : undefined;
+    const saved = Array.isArray(body?.saved) ? body.saved : undefined;
+    const data = { ...(cart ? { cart } : {}), ...(saved ? { saved } : {}) };
+    await db.session.upsert({
+      where: { id: sid },
+      create: { id: sid, ...data },
+      update: data,
+    });
+    return c.json({ ok: true });
+  })
+  // GET /orders -> this session's orders, newest first (history list).
+  .get('/orders', async (c) => {
+    const sid = sessionId(c);
+    if (!sid) return c.json([]);
+    const orders = await db.order.findMany({
+      where: { sessionId: sid },
+      orderBy: { createdAt: 'desc' },
+      include: { items: true },
+    });
+    return c.json(
+      orders.map((o) => ({
+        id: o.id,
+        total: o.total,
+        createdAt: o.createdAt.toISOString(),
+        count: o.items.reduce((n, i) => n + i.quantity, 0),
+      })),
+    );
+  })
   .get('/products/:id', async (c) => {
     const id = parseInt(c.req.param('id'), 10);
     if (!Number.isInteger(id)) return c.json({ error: 'invalid id' }, 400);
@@ -113,8 +163,9 @@ const app = new Hono()
       })),
     });
   })
-  // POST /orders { items: [{ variantId, quantity }] }
+  // POST /orders { items: [{ variantId, quantity }], address? }
   .post('/orders', async (c) => {
+    const sid = sessionId(c);
     const body = await c.req.json().catch(() => null);
     const items: unknown = body?.items;
     if (!Array.isArray(items) || items.length === 0) {
@@ -208,6 +259,11 @@ const app = new Hono()
           data: {
             total,
             ...address,
+            // Attribute to the session; connectOrCreate avoids an FK error if the
+            // session row doesn't exist yet (e.g. order before first GET /session).
+            ...(sid
+              ? { session: { connectOrCreate: { where: { id: sid }, create: { id: sid } } } }
+              : {}),
             items: {
               create: lines.map(({ variantId, quantity, price }) => ({
                 variantId,

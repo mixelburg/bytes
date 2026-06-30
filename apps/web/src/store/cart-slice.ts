@@ -55,6 +55,10 @@ const cartSlice = createSlice({
     clearCart: (state) => {
       state.items = {};
     },
+    // Seed the cart from the server snapshot on app start (session hydrate).
+    hydrateCart: (state, { payload }: PayloadAction<CartEntry[]>) => {
+      state.items = Object.fromEntries(payload.map((e) => [e.variantId, e]));
+    },
   },
   extraReducers: (builder) => {
     builder.addCase(placeOrder.fulfilled, (state) => {
@@ -63,7 +67,8 @@ const cartSlice = createSlice({
   },
 });
 
-export const { addItem, setQty, removeItem, clearCart } = cartSlice.actions;
+export const { addItem, setQty, removeItem, clearCart, hydrateCart } =
+  cartSlice.actions;
 export default cartSlice.reducer;
 
 // ── selectors ───────────────────────────────────────────────────────────────

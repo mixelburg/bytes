@@ -87,6 +87,20 @@ export function useProduct(id: string | undefined) {
   return useQuery({ ...productQueryOptions(id ?? ''), enabled: !!id });
 }
 
+export type OrderSummary = InferResponseType<typeof api.orders.$get, 200>[number];
+
+// The current session's past orders (newest first). Pure server read.
+export function useOrders() {
+  return useQuery({
+    queryKey: ['orders'],
+    queryFn: async (): Promise<OrderSummary[]> => {
+      const res = await api.orders.$get();
+      if (!res.ok) throw new Error('Failed to load orders');
+      return res.json();
+    },
+  });
+}
+
 export type TrackedOrder = InferResponseType<
   (typeof api.orders)[':id']['$get'],
   200

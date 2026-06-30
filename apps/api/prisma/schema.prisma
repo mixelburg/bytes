@@ -46,6 +46,19 @@ model ProductVariant {
   @@index([price])
 }
 
+// One row per anonymous browser session. Owns the per-session cart + saved
+// blobs; orders link back to it so history can be queried.
+// ponytail: JSON blobs — normalize into rows only if the server ever needs to
+// query/aggregate cart contents. No expiry/GC; add a sweep if rows pile up.
+model Session {
+  id        String   @id // client-minted UUID
+  cart      Json     @default("[]")
+  saved     Json     @default("[]")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  orders    Order[]
+}
+
 model Order {
   id        String      @id @default(cuid())
   total     Float
@@ -57,7 +70,12 @@ model Order {
   city      String?
   postal    String?
   country   String?
+  // Anonymous session that placed the order (nullable: pre-session orders stay valid).
+  session   Session?    @relation(fields: [sessionId], references: [id])
+  sessionId String?
   items     OrderItem[]
+
+  @@index([sessionId])
 }
 
 model OrderItem {
