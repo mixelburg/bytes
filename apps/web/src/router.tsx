@@ -1,0 +1,28 @@
+import { createBrowserRouter, type RouteObject } from 'react-router-dom';
+import Layout from './app/layout';
+import ListScreen from './screens/list';
+import DetailScreen from './screens/detail';
+import SavedScreen from './screens/saved';
+import CartScreen from './screens/cart';
+import CheckoutScreen from './screens/checkout';
+import ConfirmScreen from './screens/confirm';
+import TrackScreen from './screens/track';
+
+// Exported so tests can mount the same routes via createMemoryRouter.
+export const routes: RouteObject[] = [
+  {
+    path: '/',
+    element: <Layout />,
+    children: [
+      { index: true, element: <ListScreen /> },
+      { path: 'p/:id', element: <DetailScreen /> },
+      { path: 'saved', element: <SavedScreen /> },
+      { path: 'cart', element: <CartScreen /> },
+      { path: 'checkout', element: <CheckoutScreen /> },
+      { path: 'confirm', element: <ConfirmScreen /> },
+      { path: 'track/:id', element: <TrackScreen /> },
+    ],
+  },
+];
+
+export const router = createBrowserRouter(routes);
